@@ -805,26 +805,35 @@ function save(){
 /* ========== 云端同步（Supabase） ========== */
 function cloudApiBase(){return settings.cloud.url.replace(/\/$/,'')+'/rest/v1/workbench_sync';}
 function cloudHeaders(){return {'Content-Type':'application/json','apikey':settings.cloud.key,'Authorization':'Bearer '+settings.cloud.key};}
+function setCloudStatus(msg,isErr){
+  var el=document.getElementById('cloudStatus');
+  if(el){el.textContent=msg||'';el.style.color=isErr?'#d9534f':'var(--accent)';}
+}
 function cloudUpload(quiet){
-  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){if(!quiet)alert('请先在设置中填写云端配置');return;}
+  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){if(!quiet)setCloudStatus('请先在设置中填写云端配置（URL / Key / 同步ID）');return;}
   var payload={user_id:settings.cloud.userId,payload:data,updated_at:new Date().toISOString()};
   fetch(cloudApiBase()+'?on_conflict=user_id',{
     method:'POST',
     headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
     body:JSON.stringify(payload)
-  }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)alert('✅ 已上传到云端');})
-  .catch(function(e){if(!quiet)alert('上传失败：'+e.message+'\n请检查 URL/Key 或网络');});
+  }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)setCloudStatus('✅ 已上传到云端（同步ID：'+settings.cloud.userId+'）');})
+  .catch(function(e){if(!quiet)setCloudStatus('上传失败：'+e.message+'（检查 URL/Key/网络）',true);});
 }
 function cloudDownload(){
-  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){alert('请先在设置中填写云端配置');return;}
-  fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload',{headers:cloudHeaders()})
+  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){setCloudStatus('请先在设置中填写云端配置');return;}
+  setCloudStatus('拉取中…');
+  fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload,updated_at',{headers:cloudHeaders()})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(arr){
       if(arr&&arr.length>0&&arr[0].payload){
-        if(confirm('将从云端覆盖本地数据，确认？')){data=arr[0].payload;ensure();save();renderAll();alert('✅ 已从云端拉取并覆盖本地');}
-      }else{alert('云端暂无该同步ID的数据');}
+        data=arr[0].payload;ensure();save();renderAll();
+        var when=arr[0].updated_at?('（云端更新于 '+arr[0].updated_at+'）'):'';
+        setCloudStatus('✅ 已从云端拉取并覆盖本地 '+when);
+      }else{
+        setCloudStatus('云端暂无该同步ID（'+settings.cloud.userId+'）的数据，请先在另一台设备点“上传”',true);
+      }
     })
-    .catch(function(e){alert('拉取失败：'+e.message);});
+    .catch(function(e){setCloudStatus('拉取失败：'+e.message,true);});
 }
 function cloudSaveConfig(){
   settings.cloud.url=(document.getElementById('cloudUrl').value||'').trim();
@@ -2073,7 +2082,9 @@ function openSettings(){
       '<button onclick="cloudSaveConfig()" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;">保存配置</button>'+
       '<button onclick="cloudUpload(false)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);font-size:12px;cursor:pointer;">⬆️ 上传</button>'+
       '<button onclick="cloudDownload()" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5ddd6;background:#fbfbfb;color:var(--text);font-size:12px;cursor:pointer;">⬇️ 拉取</button>'+
-    '</div></div>'+
+    '</div>'+
+    '<div id="cloudStatus" style="font-size:12px;margin-top:8px;min-height:16px;color:var(--accent);line-height:1.4;"></div>'+
+    '</div>'+
     '<button onclick="clearAllData()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #e5ddd6;background:#fff3d6;color:#d49b26;cursor:pointer;font-size:14px;font-weight:700;">🗑️ 清空所有数据</button>'+
     '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">一禾叶 · 工作台 v3.0（含云同步）</div>'+
     '</div></div>';
