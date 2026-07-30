@@ -782,10 +782,21 @@ function ensure(){
     data._movieMigrated=true;
     save();
   }
+  /* 自动补录记录/编辑时间 */
+  var _needSave=false;
+  ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel'].forEach(function(k){
+    if(data[k]&&data[k].length){data[k].forEach(function(it){if(it&&typeof it==='object'&&it.mtime===undefined){it.mtime=fmtDateTime();_needSave=true;}});}
+  });
+  if(_needSave)save();
 }
 var _cloudTimer=null;
 function save(){
-  try{localStorage.setItem('yiheyeData',JSON.stringify(data));}catch(e){}
+  try{
+    ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel'].forEach(function(k){
+      if(data[k]&&data[k].length){data[k].forEach(function(it){if(it&&typeof it==='object'&&it.mtime===undefined)it.mtime=fmtDateTime();});}
+    });
+    localStorage.setItem('yiheyeData',JSON.stringify(data));
+  }catch(e){}
   if(settings.cloud&&settings.cloud.auto&&settings.cloud.url&&settings.cloud.userId){
     if(_cloudTimer)clearTimeout(_cloudTimer);
     _cloudTimer=setTimeout(function(){cloudUpload(true);},800);
@@ -935,6 +946,16 @@ function todayStr(){
   var n=new Date();
   return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
 }
+function fmtDateTime(d){
+  d=d||new Date();
+  function p(x){return String(x).padStart(2,'0');}
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function mtimeTag(it){
+  if(!it||!it.mtime) return '';
+  if(it.date||it.created||it.note||it.watchDate||it.finishDate||it.startDate) return '';
+  return '<div style="font-size:11px;color:var(--text-light);margin-top:3px;">🕒 记录于 '+esc(it.mtime)+'</div>';
+}
 function taskItemHtml(item,key,i,opts){
   opts=opts||{};
   var check=opts.noToggle
@@ -943,7 +964,9 @@ function taskItemHtml(item,key,i,opts){
   return check+
     '<div class="task-content"><div class="task-text">'+esc(item.text)+'</div>'+
     (item.time?'<div class="task-meta">⏰ '+item.time+'</div>':'')+
-    (item.note?'<div class="task-meta">'+esc(item.note)+'</div>':'')+'</div>'+
+    (item.date&&(key==='todo'||!opts.noToggle)?'<div class="task-meta">📅 '+item.date+'</div>':'')+
+    (item.note?'<div class="task-meta">'+esc(item.note)+'</div>':'')+
+    mtimeTag(item)+'</div>'+
     '<button class="btn-small btn-edit" onclick="editTask(\''+key+'\','+i+')">编辑</button>'+
     '<button class="btn-small btn-del" onclick="delTask(\''+key+'\','+i+')">删</button>';
 }
@@ -1013,7 +1036,18 @@ function editTask(key,i){
   if(t===null)return;
   it.text=t.trim();
   if(it.time!==undefined){var time=prompt('时间：',it.time||'');if(time)it.time=time;}
-  addHistory('task','编辑事项',it.text+(it.time?' · '+it.time:''));
+  if(key==='todo'||key==='done'){
+    var label=(key==='done'?'完成日期':'日期');
+    var def=it.date||todayStr();
+    var d=prompt(label+' (YYYY-MM-DD，例如 2026-07-29)：',def);
+    if(d!==null&&d.trim()!==''){
+      var m=d.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if(m){it.date=m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');}
+      else if(d.trim()!==def){alert('日期格式不对，保持原值 '+def);}
+    }
+  }
+  it.mtime=fmtDateTime();
+  addHistory('task','编辑事项',it.text+(it.time?' · '+it.time:'')+(it.date?' · '+it.date:''));
   save();renderAll();
 }
 function delTask(key,i){
@@ -1059,7 +1093,7 @@ function renderMood(){
     div.className='task-item';
     div.innerHTML='<div style="font-size:28px;width:40px;text-align:center;">'+(emojiMap[m.mood]||'📝')+'</div>'+
       '<div class="task-content"><div class="task-text">'+(m.mood?m.mood+' · ':'')+esc(m.note)+'</div>'+
-      '<div class="task-meta">'+m.date+'</div></div>'+
+      '<div class="task-meta">'+m.date+'</div>'+mtimeTag(m)+'</div>'+
       '<div class="book-actions">'+
       '<button class="btn-small btn-edit" onclick="editMood('+i+')">编辑</button>'+
       '<button class="btn-small btn-del" onclick="delMood('+i+')">删</button>'+
@@ -1073,6 +1107,7 @@ function editMood(i){
   var newNote=prompt('修改心情记录：',m.note||'');if(newNote===null)return;
   m.note=newNote.trim();
   var newMood=prompt('心情标签（开心/一般/难过/生气/兴奋，留空不变）：',m.mood||'');if(newMood!==null&&newMood.trim())m.mood=newMood.trim();
+  m.mtime=fmtDateTime();
   addHistory('mood','编辑心情',(m.mood?m.mood+' · ':'')+newNote);
   save();renderMood();
 }
@@ -1146,6 +1181,7 @@ function editBookWishlist(i){
   var title=prompt('书名：',b.title);if(title===null)return;b.title=title.trim();
   var author=prompt('作者：',b.author||'');if(author!==null)b.author=author.trim();
   var note=prompt('备注：',b.note||'');if(note!==null)b.note=note.trim();
+  b.mtime=fmtDateTime();
   save();renderBooksWishlist();
 }
 function delBookReading(i){if(confirm('删除这本在读书籍？')){var b=data.booksReading[i];data.booksReading.splice(i,1);addHistory('reading','删除在读书籍',b.title);save();renderBooksReading();}}
@@ -1182,6 +1218,7 @@ function renderBooksReading(){
       (b.startDate?'<div class="book-meta">📅 开始：'+esc(b.startDate)+'</div>':'')+
       (b.page?'<div class="book-progress">📍 进度：'+esc(b.page)+(b.chapter?' · '+esc(b.chapter):'')+'</div>':'')+
       (b.thoughts?'<div class="book-thoughts">'+esc(b.thoughts)+'</div>':'')+
+      mtimeTag(b)+
       '</div>'+
       '<div class="book-actions">'+
       '<button class="btn-small btn-edit" onclick="moveReadingToFinished('+i+')" title="读完">✅</button>'+
@@ -1206,6 +1243,7 @@ function renderBooksFinished(){
       (b.rating>0?'<div class="book-meta">'+renderStar(b.rating)+'</div>':'')+
       (b.pages?'<div class="book-meta">📄 '+esc(b.pages)+'</div>':'')+
       (b.review?'<div class="book-review">'+esc(b.review)+'</div>':'')+
+      mtimeTag(b)+
       '</div>'+
       '<div class="book-actions">'+
       '<button class="btn-small btn-edit" onclick="editBookFinished('+i+')">编辑</button>'+
@@ -1226,6 +1264,7 @@ function renderBooksWishlist(){
       '<div class="book-title">'+esc(b.title)+'</div>'+
       (b.author?'<div class="book-author">✍️ '+esc(b.author)+'</div>':'')+
       (b.note?'<div class="book-meta">📌 '+esc(b.note)+'</div>':'')+
+      mtimeTag(b)+
       '</div>'+
       '<div class="book-actions">'+
       '<button class="btn-small btn-edit" onclick="moveWishlistToReading('+i+')" title="开始阅读">📖</button>'+
@@ -1285,6 +1324,7 @@ function editMovieWishlist(i){
   var name=prompt('片名：',m.name);if(name===null)return;m.name=name.trim();
   var type=prompt('类型：',m.type||'电影');if(type!==null)m.type=type.trim();
   var note=prompt('备注：',m.note||'');if(note!==null)m.note=note.trim();
+  m.mtime=fmtDateTime();
   save();renderMoviesWishlist();
 }
 function delMovieWatched(i){if(confirm('删除这部已看影片？')){var m=data.moviesWatched[i];data.moviesWatched.splice(i,1);addHistory('movie','删除已看影片',m.name);save();renderMoviesWatched();}}
@@ -1315,6 +1355,7 @@ function renderMoviesWatched(){
       (m.watchDate?'<div class="movie-meta">📅 '+esc(m.watchDate)+'</div>':'')+
       (m.rating>0?'<div class="movie-meta">'+renderStar(m.rating)+'</div>':'')+
       (m.review?'<div class="movie-review-text">'+esc(m.review)+'</div>':'')+
+      mtimeTag(m)+
       '</div>'+
       '<div class="movie-actions">'+
       '<button class="btn-small btn-edit" onclick="editMovieWatched('+i+')">编辑</button>'+
@@ -1335,6 +1376,7 @@ function renderMoviesWishlist(){
       '<div class="movie-name">'+esc(m.name)+'</div>'+
       '<div class="movie-type">🎭 '+esc(m.type||'电影')+'</div>'+
       (m.note?'<div class="movie-meta">📌 '+esc(m.note)+'</div>':'')+
+      mtimeTag(m)+
       '</div>'+
       '<div class="movie-actions">'+
       '<button class="btn-small btn-edit" onclick="moveMovieWishlistToWatched('+i+')" title="已看完">🎬</button>'+
@@ -1427,7 +1469,7 @@ function renderSportRecords(){
     var div=document.createElement('div');
     div.className='task-item';
     div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.text)+'</div>'+
-      '<div class="task-meta">📅 '+esc(s.note||'')+'</div></div>'+
+      '<div class="task-meta">📅 '+esc(s.note||'')+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delSportRecord('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -1483,7 +1525,7 @@ function renderSaving(){
     var realIdx=data.saving.length-1-i;
     var div=document.createElement('div');
     div.className='task-item';
-    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">'+s.date+'</div></div>'+
+    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">'+s.date+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delSaving('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -1602,7 +1644,7 @@ function renderNews(){
   data.news.forEach(function(n,i){
     var div=document.createElement('div');
     div.className='news-item';
-    div.innerHTML='<div class="date">'+n.date+'</div><div class="t">'+esc(n.title)+'</div><div class="d">'+esc(n.note)+'</div>'+
+    div.innerHTML='<div class="date">'+n.date+'</div><div class="t">'+esc(n.title)+'</div><div class="d">'+esc(n.note)+'</div>'+mtimeTag(n)+
       '<div style="text-align:right;margin-top:8px;"><button class="btn-small btn-del" onclick="delNews('+i+')">删</button></div>';
     el.appendChild(div);
   });
@@ -1641,7 +1683,7 @@ function renderTreehole(){
   data.treeholes.forEach(function(h,i){
     var div=document.createElement('div');
     div.className='task-item';
-    div.innerHTML='<div class="task-content"><div class="task-text">'+(h.tag?h.tag+' ':'')+esc(h.text)+'</div><div class="task-meta">'+h.date+'</div></div>'+
+    div.innerHTML='<div class="task-content"><div class="task-text">'+(h.tag?h.tag+' ':'')+esc(h.text)+'</div><div class="task-meta">'+h.date+'</div>'+mtimeTag(h)+'</div>'+
       '<button class="btn-small btn-del" onclick="delTreehole('+i+')">删</button>';
     el.appendChild(div);
   });
@@ -1675,7 +1717,7 @@ function renderHistory(){
       div.className='task-item';
       div.innerHTML='<div style="font-size:24px;width:34px;text-align:center;">'+(iconMap[r.type]||'📌')+'</div>'+
         '<div class="task-content"><div class="task-text">'+esc(r.title)+'</div>'+
-        '<div class="task-meta">'+esc(r.detail)+' · '+r.time+'</div></div>';
+        '<div class="task-meta">'+esc(r.date)+' '+r.time+(r.detail?' · '+esc(r.detail):'')+'</div></div>';
       listEl.appendChild(div);
     });
   }
@@ -1771,6 +1813,7 @@ function editTravel(i){
   var album=prompt('相册存放位置：',t.album||'');if(album!==null)t.album=album.trim();
   var n=prompt('备注：',t.note||'');if(n!==null)t.note=n.trim();
   var ref=prompt('旅行感想：',t.reflection||'');if(ref!==null)t.reflection=ref.trim();
+  t.mtime=fmtDateTime();
   addHistory('travel','编辑旅行',t.place);
   save();renderTravel();
 }
@@ -1816,6 +1859,7 @@ function renderTravel(){
       (t.album?'<div class="album-info">📷 相册：'+esc(t.album)+'</div>':'')+
       (t.guide?'<div class="guide-badge">🧭 已绑定攻略</div>':'')+
       guideHtml+
+      mtimeTag(t)+
       '<div class="actions">'+
       '<button class="btn-small btn-edit" onclick="changeTravelStatus('+realIdx+',\'want\')">想去</button>'+
       '<button class="btn-small btn-edit" onclick="changeTravelStatus('+realIdx+',\'plan\')">规划中</button>'+
