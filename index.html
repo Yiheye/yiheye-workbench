@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#5fa963">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="一禾叶">
+  <link rel="manifest" href="./manifest.json?v=10">
+
+  <title>一禾叶 · 工作台</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6efe8;
+      --bg-dot:transparent;
+      --sidebar:#d4e8d6;
+      --sidebar-text:#2e3a2f;
+      --card:#ffffff;
+      --accent:#5fa963;
+      --accent-soft:#dff0e0;
+      --green:#4caf50;
+      --green-soft:#e8f5e9;
+      --blue-soft:#ddeefb;
+      --yellow-soft:#fff3d6;
+      --pink-soft:#fde2e7;
+      --text:#3a3531;
+      --text-light:#8c8179;
+      --shadow:0 4px 18px rgba(0,0,0,0.06);
+    }
+    *{box-sizing:border-box;-webkit-overflow-scrolling:touch;}
+    html,body{margin:0;padding:0;height:100%;width:100%;}
+    body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;touch-action:pan-y;}
+    nav{position:fixed;top:0;left:0;bottom:0;width:120px;background:var(--sidebar);display:flex;flex-direction:column;padding:18px 8px;gap:4px;overflow-y:auto;z-index:10;}
+    nav .brand{color:var(--sidebar-text);font-size:16px;font-weight:700;margin-bottom:2px;text-align:center;letter-spacing:2px;}
+    nav .brand-sub{color:var(--sidebar-text);opacity:.6;font-size:10px;text-align:center;margin-bottom:14px;letter-spacing:1px;}
+    nav .nav-items{display:flex;flex-direction:column;gap:4px;min-height:0;}
+    nav button{background:transparent;border:none;color:var(--sidebar-text);padding:10px 8px;border-radius:10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;transition:.2s;line-height:1.3;}
+    nav button:hover,nav button.active{background:var(--accent);color:#fff;font-weight:700;}
+    nav button .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+    nav button.dragging{opacity:0.5;}
+    nav button[draggable]{cursor:grab;}
+    nav .nav-bottom{margin-top:auto;display:flex;flex-direction:column;gap:4px;}
+    nav .nav-divider{height:1px;background:rgba(0,0,0,.1);margin:10px 0;}
+    main{position:fixed;top:0;left:120px;right:0;bottom:0;padding:32px 48px;overflow-y:auto;overflow-x:hidden;}
+    .section{display:none;}
+    .section.active{display:block;}
+    .page-title{font-size:28px;font-weight:700;margin:0 0 4px;}
+    .page-sub{color:var(--text-light);font-size:14px;margin-bottom:22px;}
+    .card{background:var(--card);border-radius:18px;padding:22px;box-shadow:var(--shadow);margin-bottom:18px;}
+    .card-title{font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    input[type="text"],input[type="number"],input[type="date"],textarea{border:1px solid #e5ddd6;border-radius:12px;padding:10px 14px;font-family:inherit;font-size:14px;outline:none;background:#fdfaf7;}
+    input:focus,textarea:focus{border-color:var(--accent);}
+    textarea{width:100%;min-height:120px;resize:vertical;}
+    .btn-add{background:var(--accent-soft);color:var(--accent);border:none;padding:8px 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:5px;}
+    .btn-green{background:var(--green);color:#fff;border:none;padding:12px 24px;border-radius:14px;cursor:pointer;font-weight:700;font-size:15px;}
+    .btn-outline{background:#fff;color:var(--text);border:1px solid #e5ddd6;padding:12px 24px;border-radius:14px;cursor:pointer;font-weight:700;font-size:15px;}
+    .empty{color:var(--text-light);text-align:center;padding:14px;}
+    ::-webkit-scrollbar{width:6px;}
+    ::-webkit-scrollbar-thumb{background:#d8d0c9;border-radius:3px;}
+    .quote-box{background:linear-gradient(135deg,#dff0e0,#f0f8f1);border-radius:18px;padding:20px;margin-bottom:18px;border-left:5px solid var(--accent);}
+    .quote-label{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+    .quote-text{font-size:20px;}
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+    .stat-card{border-radius:18px;padding:20px;text-align:center;min-height:100px;display:flex;flex-direction:column;justify-content:center;}
+    .stat-card.g{background:var(--green-soft);color:#3d9b5a;}
+    .stat-card.r{background:#ffe0e6;color:#e27d8f;}
+    .stat-card.b{background:var(--blue-soft);color:#4a90c7;}
+    .stat-card.y{background:var(--yellow-soft);color:#d49b26;}
+    .stat-card .big{font-size:32px;font-weight:700;}
+    .stat-card .small{font-size:13px;margin-top:4px;opacity:.85;}
+    .task-list{display:flex;flex-direction:column;gap:10px;}
+    .task-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:#fbfbfb;}
+    .task-item.done .task-text{text-decoration:line-through;color:var(--text-light);}
+    .task-check{width:22px;height:22px;border:2px solid #c9c0b8;border-radius:50%;cursor:pointer;display:grid;place-items:center;flex-shrink:0;transition:.2s;}
+    .task-check.checked{background:var(--green);border-color:var(--green);color:#fff;}
+    .task-content{flex:1;}
+    .task-text{font-size:15px;}
+    .task-meta{font-size:12px;color:var(--text-light);margin-top:3px;}
+    .btn-small{border:none;padding:5px 10px;border-radius:8px;cursor:pointer;font-size:12px;}
+    .btn-edit{background:var(--blue-soft);color:#4a90c7;}
+    .btn-del{background:var(--pink-soft);color:#e27d8f;}
+    .mood-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+    .mood-card{background:#fff;border-radius:16px;padding:18px 8px;text-align:center;cursor:pointer;border:2px solid transparent;transition:.2s;}
+    .mood-card:hover,.mood-card.selected{border-color:var(--accent);background:var(--accent-soft);}
+    .mood-emoji{font-size:42px;line-height:1;margin-bottom:8px;}
+    .mood-card span{font-size:13px;}
+    .mood-card.wide{grid-column:span 4;}
+    .reading-top{background:linear-gradient(135deg,#f3e4fb,#e9d4f5);border-radius:18px;padding:22px;margin-bottom:18px;color:var(--accent);}
+    .reading-top .label{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+    .reading-top .title{font-size:22px;font-weight:900;margin-bottom:6px;}
+    .reading-top .author{font-size:14px;opacity:.85;}
+    .book-section{margin-bottom:20px;}
+    .book-section-title{font-size:15px;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+    .book-card{background:#fbfbfb;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+    .book-card .book-icon{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-size:20px;flex-shrink:0;}
+    .book-card .book-icon.reading{background:var(--accent-soft);color:var(--accent);}
+    .book-card .book-icon.finished{background:var(--green-soft);color:#3d9b5a;}
+    .book-card .book-icon.wishlist{background:var(--blue-soft);color:#4a90c7;}
+    .book-card .book-detail{flex:1;min-width:0;}
+    .book-card .book-title{font-size:15px;font-weight:700;margin-bottom:2px;}
+    .book-card .book-author{font-size:12px;color:var(--text-light);margin-bottom:4px;}
+    .book-card .book-meta{font-size:12px;color:var(--text-light);margin-bottom:4px;}
+    .book-card .book-progress{font-size:13px;color:var(--accent);font-weight:600;margin-bottom:4px;}
+    .book-card .book-thoughts{font-size:13px;color:var(--text);line-height:1.6;margin-top:6px;padding:8px 10px;background:#fff;border-radius:8px;border-left:3px solid var(--accent);}
+    .book-card .book-review{font-size:13px;color:var(--text);line-height:1.6;margin-top:6px;padding:8px 10px;background:#fff;border-radius:8px;border-left:3px solid var(--green);}
+    .star-rating{display:inline-flex;gap:2px;font-size:14px;line-height:1;}
+    .star-rating .star-on{color:#f5a623;}
+    .star-rating .star-off{color:#ddd;}
+    .book-card .book-actions{display:flex;gap:6px;flex-shrink:0;flex-direction:column;}
+    .book-add-section{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+    .book-add-section button{flex:1;min-width:100px;}
+    .calendar{background:#fff;border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px;}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px;text-align:center;width:100%;table-layout:fixed;}
+    .cal-head{font-size:12px;color:var(--text-light);font-weight:700;padding:6px 0;text-align:center;}
+    .cal-day{width:100%;aspect-ratio:1 !important;min-height:38px;box-sizing:border-box !important;white-space:nowrap !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;border-radius:8px;cursor:pointer;font-size:14px !important;font-weight:500 !important;gap:1px;overflow:hidden;line-height:1.2;}
+    .cal-day span{display:block;line-height:1 !important;}
+    .cal-day .cal-num{font-size:14px !important;}
+    .cal-day .cal-mark{font-size:10px !important;color:var(--green) !important;line-height:1 !important;}
+    .cal-day:hover{background:var(--accent-soft);}
+    .cal-day.active{background:#ddeefb;color:#4a90c7;font-weight:700;}
+    .cal-day.muted{color:#d0c8c0;}
+    .cal-day.has-sport{background:transparent;}
+    .cal-grid{table-layout:fixed;}
+    .course-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px;}
+    .course-card{border-radius:18px;overflow:hidden;box-shadow:var(--shadow);background:#fff;cursor:pointer;}
+    .course-thumb{height:110px;display:grid;place-items:center;position:relative;}
+    .course-thumb .play{width:44px;height:44px;background:rgba(0,0,0,.5);color:#fff;border-radius:50%;display:grid;place-items:center;font-size:18px;}
+    .course-info{padding:10px 12px;}
+    .course-info .t{font-weight:700;font-size:14px;}
+    .course-info .d{font-size:12px;color:var(--text-light);margin-top:3px;}
+    .target-banner{background:linear-gradient(135deg,#a8e6cf,#88d8a3);border-radius:18px;padding:18px;margin-bottom:16px;color:#2e7d32;}
+    .target-banner h3{margin:0 0 8px;font-size:17px;}
+    .target-banner .tags{display:flex;gap:8px;flex-wrap:wrap;}
+    .target-banner .tags span{background:rgba(255,255,255,.5);padding:4px 12px;border-radius:10px;font-size:12px;font-weight:700;}
+    .sport-input{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+    .saving-top{background:linear-gradient(135deg,#fff3d6,#ffe9b3);border-radius:18px;padding:24px;margin-bottom:16px;text-align:center;}
+    .saving-top .icon{font-size:48px;margin-bottom:8px;}
+    .saving-top h2{margin:6px 0;font-size:22px;color:#d49b26;}
+    .saving-top p{margin:0;color:var(--text-light);font-size:13px;}
+    .ratio-card{background:#fff;border-radius:18px;padding:22px;box-shadow:var(--shadow);margin-bottom:14px;}
+    .ratio-card h3{margin:0 0 14px;font-size:17px;}
+    .ratio-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px dashed #eee;}
+    .ratio-item:last-child{border-bottom:none;}
+    .ratio-pct{background:var(--accent-soft);color:var(--accent);font-weight:900;font-size:18px;width:60px;height:60px;border-radius:14px;display:grid;place-items:center;flex-shrink:0;}
+    .ratio-body h4{margin:0 0 4px;font-size:15px;}
+    .ratio-body p{margin:0;color:var(--text-light);font-size:13px;line-height:1.6;}
+    .saving-stat{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px;}
+    .saving-stat .stat-card{background:#fff;box-shadow:var(--shadow);}
+    .save-action{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+    .pols-top{background:linear-gradient(135deg,#ddeefb,#c5e0f7);border-radius:18px;padding:22px;margin-bottom:18px;color:#2e6da4;}
+    .pols-top h3{margin:0 0 6px;font-size:18px;}
+    .pols-top p{margin:0;font-size:13px;opacity:.9;}
+    .pols-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow);}
+    .pols-card h4{margin:0 0 8px;font-size:16px;color:var(--accent);}
+    .pols-card .pts{font-size:14px;line-height:1.9;color:var(--text);}
+    .pols-card .pts div{padding:4px 0 4px 18px;position:relative;}
+    .pols-card .pts div:before{content:'•';position:absolute;left:6px;color:var(--accent);}
+    .search-box{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+    .search-box input{flex:1;min-width:200px;}
+    .search-result{background:#fbfbfb;border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;transition:.2s;}
+    .search-result:hover{background:var(--accent-soft);}
+    .search-result .t{font-size:15px;font-weight:700;margin-bottom:4px;}
+    .search-result .d{font-size:13px;color:var(--text-light);line-height:1.5;}
+    .search-tag{display:inline-block;background:var(--blue-soft);color:#4a90c7;padding:2px 8px;border-radius:8px;font-size:11px;margin-right:6px;}
+    .news-item{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+    .news-item .date{font-size:12px;color:var(--text-light);margin-bottom:4px;}
+    .news-item .t{font-size:15px;font-weight:700;margin-bottom:4px;}
+    .news-item .d{font-size:13px;color:var(--text-light);line-height:1.6;}
+    .treehole-top{background:linear-gradient(135deg,#e8f5e9,#d4ebd6);border-radius:18px;padding:30px;text-align:center;margin-bottom:16px;}
+    .treehole-top .icon{font-size:50px;}
+    .treehole-top .t1{font-size:16px;margin-top:10px;font-weight:700;color:#2e7d32;}
+    .treehole-top .t2{font-size:13px;color:var(--text-light);margin-top:6px;}
+    .treehole-top .t2{font-size:13px;color:var(--text-light);margin-top:6px;}
+    .th-mood-tags{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;}
+    .th-tag{background:#f5f0eb;border:1px solid #e5ddd6;border-radius:18px;padding:6px 14px;font-size:14px;cursor:pointer;}
+    .th-tag.selected{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);}
+    .btn-treehole{background:var(--green);color:#fff;border:none;padding:14px;border-radius:14px;cursor:pointer;font-weight:700;font-size:16px;width:100%;margin-top:6px;}
+    .reply-card{background:#f3e4fb;border-left:4px solid var(--accent);padding:16px;border-radius:12px;margin-top:12px;font-size:14px;line-height:1.7;}
+    .movie-card{background:#fbfbfb;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;}
+    .movie-card .movie-icon{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-size:20px;flex-shrink:0;}
+    .movie-card .movie-icon.watched{background:var(--green-soft);color:#3d9b5a;}
+    .movie-card .movie-icon.wishlist{background:var(--blue-soft);color:#4a90c7;}
+    .movie-card .movie-detail{flex:1;min-width:0;}
+    .movie-card .movie-name{font-size:15px;font-weight:700;margin-bottom:2px;}
+    .movie-card .movie-type{font-size:12px;color:var(--text-light);margin-bottom:4px;}
+    .movie-card .movie-meta{font-size:12px;color:var(--text-light);margin-bottom:4px;}
+    .movie-card .movie-review-text{font-size:13px;color:var(--text);line-height:1.6;margin-top:6px;padding:8px 10px;background:#fff;border-radius:8px;border-left:3px solid var(--green);}
+    .movie-card .movie-actions{display:flex;gap:6px;flex-shrink:0;flex-direction:column;}
+    .movie-add-section{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+    .movie-add-section button{flex:1;min-width:100px;}
+
+.travel-filter{display:flex;gap:10px;flex-wrap:wrap;}
+    .travel-filter button{background:#f5f0eb;border:none;padding:8px 18px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;color:var(--text);}
+    .travel-filter button.active{background:var(--accent);color:#fff;}
+    .travel-form{display:flex;flex-direction:column;gap:12px;}
+    .travel-form input,.travel-form textarea{border:1px solid #e5ddd6;border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;background:#fdfaf7;outline:none;}
+    .travel-form input:focus,.travel-form textarea:focus{border-color:var(--accent);}
+    .travel-form textarea{min-height:90px;resize:vertical;}
+    .travel-status-pick{display:flex;gap:10px;flex-wrap:wrap;}
+    .ts-btn{flex:1;min-width:90px;background:#f5f0eb;border:2px solid transparent;border-radius:12px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:.2s;}
+    .ts-btn.active{background:var(--blue-soft);border-color:#4a90c7;color:#2e6da4;}
+    .btn-travel-add{background:linear-gradient(135deg,#4a90c7,#6ab0e8);color:#fff;border:none;padding:14px;border-radius:14px;cursor:pointer;font-weight:700;font-size:15px;width:100%;margin-top:6px;}
+    .travel-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+    .travel-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+    .travel-card .place{font-size:18px;font-weight:900;color:var(--text);}
+    .travel-card .date{font-size:12px;color:var(--text-light);margin-top:4px;}
+    .travel-card .note{font-size:14px;color:var(--text-light);margin-top:8px;line-height:1.6;}
+    .travel-card .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+    .travel-card .tag{font-size:12px;padding:4px 10px;border-radius:10px;font-weight:700;}
+    .travel-card .tag.want{background:#ddeefb;color:#4a90c7;}
+    .travel-card .tag.plan{background:#fff3d6;color:#d49b26;}
+    .travel-card .tag.done{background:#e8f5e9;color:#2e7d32;}
+    .travel-card .tag.again{background:#ffe0e6;color:#e27d8f;}
+    .travel-card .companions{font-size:13px;color:var(--text);margin-top:6px;}
+    .travel-card .companions span{display:inline-block;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:8px;font-size:12px;margin-right:4px;}
+    .travel-card .reflection{font-size:13px;color:var(--text);line-height:1.6;margin-top:8px;padding:10px 12px;background:#f8fbfd;border-radius:10px;border-left:3px solid var(--accent);}
+    .travel-card .album-info{font-size:12px;color:var(--text-light);margin-top:6px;padding:6px 10px;background:#f5f0eb;border-radius:8px;}
+    .travel-card .guide-badge{display:inline-block;background:var(--green-soft);color:#3d9b5a;font-size:12px;font-weight:600;padding:3px 10px;border-radius:10px;margin-top:6px;}
+    .travel-card .guide-content{font-size:13px;color:var(--text);line-height:1.7;margin-top:8px;padding:12px;background:#f8fbf8;border-radius:10px;border:1px dashed var(--accent);}
+    .travel-card .guide-content h4{margin:0 0 6px;font-size:13px;color:var(--accent);}
+    .travel-card .guide-content .guide-item{margin-bottom:6px;}
+    .guide-form{display:flex;flex-direction:column;gap:10px;}
+    .guide-form input,.guide-form select,.guide-form textarea{border:1px solid #e5ddd6;border-radius:12px;padding:10px 14px;font-family:inherit;font-size:14px;background:#fdfaf7;outline:none;}
+    .guide-form input:focus,.guide-form select:focus,.guide-form textarea:focus{border-color:var(--accent);}
+    .guide-form textarea{min-height:60px;resize:vertical;}
+    .guide-form .guide-row{display:flex;gap:10px;}
+    .guide-form .guide-row>*{flex:1;}
+    .guide-result{background:#f8fbf8;border:1px dashed var(--accent);border-radius:14px;padding:16px;margin-top:12px;}
+    .guide-result h4{margin:0 0 8px;font-size:15px;color:var(--accent);}
+    .guide-result .gi{margin-bottom:8px;}
+    .guide-result .gi-title{font-weight:700;font-size:13px;color:var(--text);}
+    .guide-result .gi-content{font-size:13px;color:var(--text-light);line-height:1.6;}
+.travel-card .actions{display:flex;gap:8px;margin-top:12px;}
+    .insp-card{background:#f8fbfd;border-radius:16px;padding:16px;margin-bottom:12px;display:flex;gap:14px;align-items:center;}
+    .insp-icon{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.05);flex-shrink:0;}
+    .insp-info{flex:1;}
+    .insp-title{font-size:16px;font-weight:900;margin-bottom:6px;}
+    .insp-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+    .insp-tags span{font-size:12px;color:#4a90c7;background:var(--blue-soft);padding:3px 10px;border-radius:10px;}
+    .insp-desc{font-size:13px;color:var(--text-light);line-height:1.5;}
+    .btn-insp-add{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:20px;cursor:pointer;flex-shrink:0;}
+    @media (max-width:768px){
+      nav{width:90px;padding:12px 6px;gap:6px;}
+      nav .brand{font-size:13px;}
+      nav button{font-size:10px;padding:8px 2px;min-height:58px;}
+      nav button .icon{font-size:18px;}
+      main{left:90px;padding:18px;}
+      .mood-grid{grid-template-columns:1fr 1fr;}
+      .mood-card.wide{grid-column:span 2;}
+      .course-grid,.stats-row,.saving-stat{grid-template-columns:repeat(2,1fr);}
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">🌱 一禾叶</div>
+    <div class="brand-sub">Daily Workbench</div>
+    <div class="nav-items" id="navItems">
+      <button class="active" data-section="daily" draggable="true"><span class="icon">📅</span>每日计划</button>
+      <button data-section="mood" draggable="true"><span class="icon">🤍</span>心情记录</button>
+      <button data-section="reading" draggable="true"><span class="icon">📖</span>读书记录</button>
+      <button data-section="movie" draggable="true"><span class="icon">🎬</span>观影记录</button>
+      <button data-section="sport" draggable="true"><span class="icon">🧘</span>运动锻炼</button>
+      <button data-section="saving" draggable="true"><span class="icon">🏦</span>存钱计划</button>
+      <button data-section="politics" draggable="true"><span class="icon">🏛️</span>时事政治</button>
+      <button data-section="history" draggable="true"><span class="icon">🕰️</span>历史记录</button>
+      <button data-section="travel" draggable="true"><span class="icon">✈️</span>旅游日记</button>
+      <button data-section="treehole" draggable="true"><span class="icon">🌳</span>树洞</button>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-bottom">
+      <button onclick="openSettings()" draggable="true"><span class="icon">⚙️</span>设置</button>
+    </div>
+  </nav>
+
+  <main>
+    <section id="daily" class="section active">
+      <h1 class="page-title" id="todayTitle"></h1>
+      <div class="page-sub" id="todaySub"></div>
+      <div class="quote-box">
+        <div class="quote-label">📔 每日金句</div>
+        <div class="quote-text" id="dailyQuote">让优秀成为一种习惯。</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card b"><div class="big" id="doneCount">0</div><div class="small">今日已完成</div></div>
+        <div class="stat-card y"><div class="big" id="todoCount">0</div><div class="small">今日待完成</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>📝 今日待完成</span><button class="btn-add" onclick="addTask('todo')">+ 新增</button></div>
+        <div class="task-list" id="todoList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ 今日已完成</div>
+        <div class="task-list" id="doneList"></div>
+      </div>
+    </section>
+
+    <section id="mood" class="section">
+      <h1 class="page-title">今日心情</h1>
+      <div class="page-sub">你今天感觉怎么样？</div>
+      <div class="mood-grid">
+        <div class="mood-card" data-mood="开心"><div class="mood-emoji">😊</div><span>开心</span></div>
+        <div class="mood-card" data-mood="一般"><div class="mood-emoji">😐</div><span>一般</span></div>
+        <div class="mood-card" data-mood="难过"><div class="mood-emoji">😢</div><span>难过</span></div>
+        <div class="mood-card" data-mood="生气"><div class="mood-emoji">😡</div><span>生气</span></div>
+        <div class="mood-card wide" data-mood="兴奋"><div class="mood-emoji">🤩</div><span>兴奋</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📓 心情日记</div>
+        <textarea id="moodNote" placeholder="今天还没有记录心情哦~"></textarea>
+        <div style="margin-top:10px;text-align:right;"><button class="btn-add" onclick="saveMood()">保存今日心情</button></div>
+        <div id="moodHistory" style="margin-top:16px"></div>
+      </div>
+    </section>
+
+    <section id="reading" class="section">
+      <h1 class="page-title">阅读存档本</h1>
+      <div class="page-sub">每一本，都是成长的印记</div>
+      <div class="reading-top">
+        <div class="label">📕 本月推荐</div>
+        <div class="title">《你当像鸟飞往你的山》</div>
+        <div class="author">塔拉·韦斯特弗 | 教育改变命运的力量</div>
+      </div>
+      <div class="card">
+        <div class="book-add-section">
+          <button class="btn-add" onclick="addBookReading()">📖 添加在读书籍</button>
+          <button class="btn-add" onclick="addBookFinished()">✅ 添加已读书籍</button>
+          <button class="btn-add" onclick="addBookWishlist()">📝 添加想看书籍</button>
+        </div>
+        <div class="book-section">
+          <div class="book-section-title">📖 在读书籍</div>
+          <div id="booksReadingList"></div>
+        </div>
+        <div class="book-section">
+          <div class="book-section-title">✅ 已读书籍</div>
+          <div id="booksFinishedList"></div>
+        </div>
+        <div class="book-section">
+          <div class="book-section-title">📝 想看备选清单</div>
+          <div id="booksWishlistList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="movie" class="section">
+      <h1 class="page-title">影视存档本</h1>
+      <div class="page-sub">值得收藏的影视作品</div>
+      <div class="card">
+        <div class="movie-add-section">
+          <button class="btn-add" onclick="addMovieWatched()">🎬 添加已看影片</button>
+          <button class="btn-add" onclick="addMovieWishlist()">📝 添加片单备选</button>
+        </div>
+        <div class="book-section">
+          <div class="book-section-title">🎬 已观看影片</div>
+          <div id="moviesWatchedList"></div>
+        </div>
+        <div class="book-section">
+          <div class="book-section-title">📝 片单备选清单</div>
+          <div id="moviesWishlistList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sport" class="section">
+      <h1 class="page-title">运动锻炼</h1>
+      <div class="page-sub">每日打卡 · 塑形跟练</div>
+      <div class="target-banner">
+        <h3>🎯 当前目标：塑形改善腿型 + 拯救胯宽拜拜肉</h3>
+        <div class="tags"><span>瘦腿直腿</span><span>改善假胯宽</span><span>手臂紧致</span><span>核心塑形</span></div>
+      </div>
+      <div class="calendar">
+        <div class="card-title" style="margin-bottom:6px;"><span id="calMonth"></span></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✍️ 记录今日运动</div>
+        <div class="sport-input">
+          <input type="text" id="sportInput" placeholder="今天练了什么？例如：欧阳春晓直腿训练 10min" style="flex:1;min-width:200px;">
+          <button class="btn-green" onclick="sportCheckin()">打卡 ✓</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>📋 运动记录</span><span style="font-size:12px;color:var(--text-light);">点击日历日期可补录</span></div>
+        <div id="sportRecordList"></div>
+      </div>
+      <div class="card-title">🎥 欧阳春晓 · 主推跟练</div>
+      <div class="course-grid" id="courseMain"></div>
+      <div class="card-title">💪 其他博主 · 补充跟练</div>
+      <div class="course-grid" id="courseOther"></div>
+    </section>
+
+    <section id="saving" class="section">
+      <h1 class="page-title">存钱计划</h1>
+      <div class="page-sub">6211 四分法 · 坚持就是底气</div>
+      <div class="saving-top">
+        <div class="icon">🏦</div>
+        <h2>专属「6211」存钱法</h2>
+        <p>先把工资按比例分到四个账户，剩下的再安心花</p>
+      </div>
+      <div class="saving-stat">
+        <div class="stat-card g"><div class="big" id="savedTotal">¥0</div><div class="small">已存金额</div></div>
+        <div class="stat-card y"><div class="big" id="savedPercent">0%</div><div class="small">完成进度</div></div>
+      </div>
+      <div class="progress-bar" style="background:#fff;box-shadow:var(--shadow);padding:0;height:12px;border-radius:10px;overflow:hidden;"><div class="progress-fill" id="saveProgress" style="width:0%;"></div></div>
+      <div class="card">
+        <div class="card-title">💰 存入一笔</div>
+        <div class="save-action">
+          <input type="number" id="saveAmount" placeholder="存入金额" style="flex:1;min-width:120px;">
+          <button class="btn-green" onclick="addSaving()">存入</button>
+        </div>
+        <div id="savingList" style="margin-top:14px"></div>
+      </div>
+      <div class="ratio-card">
+        <h3>你的专属四分法备忘</h3>
+        <div class="ratio-item"><div class="ratio-pct">60%</div><div class="ratio-body"><h4>日常生活</h4><p>稳稳托住生活质量，不用每笔账都精打细算。</p></div></div>
+        <div class="ratio-item"><div class="ratio-pct">20%</div><div class="ratio-body"><h4>强制储蓄（含专项）</h4><p>基础储蓄优先，旅游学习基金弹性处理，能存就存不硬撑。</p></div></div>
+        <div class="ratio-item"><div class="ratio-pct">10%</div><div class="ratio-body"><h4>人情往来</h4><p>社交预算固定，维护关系不心疼。</p></div></div>
+        <div class="ratio-item"><div class="ratio-pct">10%</div><div class="ratio-body"><h4>应急备用</h4><p>安全底线单独存放，非急事不动。</p></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📌 执行口诀</div>
+        <div style="background:var(--accent-soft);padding:14px;border-radius:12px;color:var(--accent);font-weight:700;line-height:1.8;">
+          工资到账先挪后花，<br>生活费留足再存，<br>专项储蓄看心情，<br>应急备用是底线。
+        </div>
+      </div>
+    </section>
+
+    <section id="politics" class="section">
+      <h1 class="page-title">时事政治</h1>
+      <div class="page-sub">考公系统学习 · 理论框架 + 时政积累 + 联网搜索</div>
+      <div class="pols-top">
+        <h3>📚 学习路径</h3>
+        <p>理论体系 → 党的重要会议 → 政策方针 → 每日时政 → 联网搜索 → 自行积累</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔍 搜索政治理论 / 时政热点</div>
+        <div class="search-box">
+          <input type="text" id="polSearchInput" placeholder="输入关键词，如：新质生产力、二十大报告、全过程人民民主..." onkeydown="if(event.key==='Enter')polSearch()">
+          <button class="btn-green" onclick="polSearch()">搜索</button>
+        </div>
+        <div id="polSearchResults" style="margin-top:14px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;">
+          <span>🗓️ 每日时政</span>
+          <button class="btn-add" onclick="fetchLatestNews()">🔄 获取最新时政</button>
+        </div>
+        <div id="dailyNews"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📖 政治理论系统学习</div>
+        <div id="polList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>📰 时政热点积累</span><button class="btn-add" onclick="addNews()">+ 新增</button></div>
+        <div id="newsList"></div>
+      </div>
+    </section>
+
+    <section id="history" class="section">
+      <h1 class="page-title">历史记录</h1>
+      <div class="page-sub">每天的努力都在这里，一点点被看见</div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <span>📅 选择日期</span>
+          <input type="date" id="historyDate" onchange="renderHistory()" style="flex:1;min-width:140px;">
+          <button class="btn-add" onclick="setHistoryToday()">回到今天</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📖 当天记录</div>
+        <div id="historyList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>📊 近 7 天活跃统计</span><button class="btn-add" onclick="clearHistory()">清空历史</button></div>
+        <div id="historyStats" style="margin-top:10px;"></div>
+      </div>
+    </section>
+
+    <section id="travel" class="section">
+      <h1 class="page-title">旅游日记</h1>
+      <div class="page-sub">想去的 · 规划中的 · 已去过的</div>
+      <div class="stats-row">
+        <div class="stat-card b"><div class="big" id="travelWant">0</div><div class="small">📍 想去</div></div>
+        <div class="stat-card y"><div class="big" id="travelPlan">0</div><div class="small">🗓️ 规划中</div></div>
+        <div class="stat-card g"><div class="big" id="travelDone">0</div><div class="small">✅ 已去</div></div>
+        <div class="stat-card r"><div class="big" id="travelAgain">0</div><div class="small">💕 还想去</div></div>
+      </div>
+      <div class="card">
+        <div class="travel-filter" id="travelFilter">
+          <button class="active" data-filter="all">全部</button>
+          <button data-filter="want">想去</button>
+          <button data-filter="plan">规划中</button>
+          <button data-filter="done">已去</button>
+          <button data-filter="again">还想去</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ 添加旅行</div>
+        <div class="travel-form">
+          <input type="text" id="travelPlace" placeholder="目的地名称，如：日本京都">
+          <div class="guide-row" style="display:flex;gap:10px;">
+            <input type="text" id="travelDate" placeholder="出行周期，如：2027年春 / 5天4晚" style="flex:1;">
+            <input type="text" id="travelCompanions" placeholder="同行人，如：闺蜜 / 家人 / 独自" style="flex:1;">
+          </div>
+          <input type="text" id="travelAlbum" placeholder="相册存放位置（如：手机相册/日本2027 文件夹）">
+          <textarea id="travelNote" placeholder="旅行备注（行程规划/注意事项等）..."></textarea>
+          <textarea id="travelReflection" placeholder="旅行感想（留作回忆）..." style="min-height:70px;"></textarea>
+          <div class="travel-status-pick">
+            <div class="ts-btn active" data-status="want">📍 想去</div>
+            <div class="ts-btn" data-status="plan">🗓️ 规划中</div>
+            <div class="ts-btn" data-status="done">✅ 已去</div>
+            <div class="ts-btn" data-status="again">💕 还想去</div>
+          </div>
+          <button class="btn-travel-add" onclick="addTravel()">📍 添加到旅行清单</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧭 智能旅行攻略辅助</div>
+        <div style="font-size:13px;color:var(--text-light);margin-bottom:12px;">根据目的地、天数、预算、同行人生成攻略参考，可保存到旅行条目</div>
+        <div class="guide-form" style="margin-bottom:14px;">
+          <div class="guide-row">
+            <select id="recMood" style="flex:1;">
+              <option value="">我想去的氛围</option>
+              <option value="海岛">🏖️ 海岛度假</option>
+              <option value="古城">🏛️ 古城文化</option>
+              <option value="自然">🌿 自然山水</option>
+              <option value="美食">🍜 美食之旅</option>
+              <option value="都市">🏙️ 都市潮流</option>
+              <option value="小众">🌸 小众秘境</option>
+            </select>
+            <select id="recSeason" style="flex:1;">
+              <option value="">出行季节</option>
+              <option value="春">🌸 春</option>
+              <option value="夏">☀️ 夏</option>
+              <option value="秋">🍁 秋</option>
+              <option value="冬">❄️ 冬</option>
+            </select>
+          </div>
+          <button class="btn-green" onclick="recommendDest()" style="width:100%;">🔮 智能推荐目的地</button>
+        </div>
+        <div id="recResult"></div>
+        <div class="guide-form">
+          <div class="guide-row">
+            <input type="text" id="guideDest" placeholder="目的地，如：日本京都">
+            <select id="guideDays" style="flex:1;">
+              <option value="">天数</option>
+              <option value="2">2天</option>
+              <option value="3">3天</option>
+              <option value="4">4天</option>
+              <option value="5">5天</option>
+              <option value="7">7天</option>
+            </select>
+          </div>
+          <div class="guide-row">
+            <select id="guideBudget" style="flex:1;">
+              <option value="">预算</option>
+              <option value="low">经济型</option>
+              <option value="mid">舒适型</option>
+              <option value="high">高端型</option>
+            </select>
+            <select id="guideCompanions" style="flex:1;">
+              <option value="">同行人</option>
+              <option value="solo">独自</option>
+              <option value="couple">情侣</option>
+              <option value="friends">朋友</option>
+              <option value="family">家庭</option>
+            </select>
+          </div>
+          <button class="btn-green" onclick="generateGuide()" style="width:100%;">🧭 生成攻略参考</button>
+        </div>
+        <div id="guideResult"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>🧳 我的旅行清单</span><button class="btn-add" onclick="clearTravel()">清空</button></div>
+        <div id="travelList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">💡 旅行灵感推荐</div>
+        <div id="travelInspiration"></div>
+      </div>
+    </section>
+
+    <section id="treehole" class="section">
+      <h1 class="page-title">树洞</h1>
+      <div class="page-sub">说给树洞听 · 安全又温暖</div>
+      <div class="treehole-top">
+        <div class="icon">🌳</div>
+        <div class="t1">在这里，你可以倾诉任何心事。</div>
+        <div class="t2">所有内容只保存在你的手机上，无人知晓。</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✍️ 写下你的心事</div>
+        <textarea id="treeholeInput" placeholder="今天想说点什么..."></textarea>
+        <div class="th-mood-tags">
+          <div class="th-tag" data-tag="😊 开心">😊 开心</div>
+          <div class="th-tag" data-tag="😢 难过">😢 难过</div>
+          <div class="th-tag" data-tag="😰 焦虑">😰 焦虑</div>
+          <div class="th-tag" data-tag="😡 愤怒">😡 愤怒</div>
+          <div class="th-tag" data-tag="😶 迷茫">😶 迷茫</div>
+          <div class="th-tag" data-tag="🥰 感恩">🥰 感恩</div>
+        </div>
+        <button class="btn-treehole" onclick="saveTreehole()">投递给树洞</button>
+        <div class="reply-card" id="treeholeReply" style="display:none;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>📖 心事记录</span><button class="btn-add" onclick="clearTreehole()">清空</button></div>
+        <div id="treeholeList"></div>
+      </div>
+    </section>
+  </main>
+
+<script>
+/* ========== 常量数据 ========== */
+var quotes=['让优秀成为一种习惯。','种一棵树最好的时间是十年前，其次是现在。','星光不问赶路人，时光不负有心人。','每天进步一点点。','慢慢来，比较快。','保持热爱，奔赴山海。'];
+
+var dailyNewsPool=[
+  {t:'全面深化改革',d:'党的二十届三中全会强调进一步全面深化改革，推进中国式现代化。'},
+  {t:'新质生产力',d:'加快发展新质生产力，推动经济高质量发展。'},
+  {t:'全过程人民民主',d:'坚持和完善人民代表大会制度，发展全过程人民民主。'},
+  {t:'共同富裕',d:'扎实推进共同富裕，缩小城乡区域差距。'},
+  {t:'生态文明建设',d:'推动绿色发展，促进人与自然和谐共生。'},
+  {t:'粮食安全',d:'牢牢守住十八亿亩耕地红线，确保粮食安全。'},
+  {t:'数字经济',d:'加快发展数字经济，促进数字经济和实体经济深度融合。'},
+  {t:'乡村振兴',d:'全面推进乡村振兴，巩固拓展脱贫攻坚成果。'},
+  {t:'就业优先',d:'实施就业优先战略，促进高质量充分就业。'},
+  {t:'健康中国',d:'推进健康中国建设，把保障人民健康放在优先位置。'}
+];
+
+var polTemplate=[
+  {h4:'一、马克思主义基本原理',pts:['哲学基本问题：思维与存在的关系问题','唯物论：物质决定意识，意识对物质有能动反作用','辩证法三大规律：对立统一、量变质变、否定之否定','认识论：实践是认识的基础，认识反作用于实践','历史唯物主义：社会存在决定社会意识，生产力决定生产关系','价值规律：商品价值量由社会必要劳动时间决定','剩余价值理论：揭示资本主义剥削的秘密']},
+  {h4:'二、毛泽东思想',pts:['活的灵魂：实事求是、群众路线、独立自主','新民主主义革命：无产阶级领导的、人民大众的、反帝反封建的革命','三大法宝：统一战线、武装斗争、党的建设','农村包围城市、武装夺取政权的道路','社会主义改造理论：一化三改','人民民主专政理论']},
+  {h4:'三、邓小平理论',pts:['思想路线：解放思想、实事求是','社会主义本质：解放生产力，发展生产力，消灭剥削，消除两极分化，最终达到共同富裕','社会主义初级阶段理论','党的基本路线：一个中心，两个基本点','一国两制','三个有利于标准']},
+  {h4:'四、"三个代表"重要思想',pts:['代表中国先进生产力的发展要求','代表中国先进文化的前进方向','代表中国最广大人民的根本利益','关键在坚持与时俱进，核心在坚持党的先进性，本质在坚持执政为民']},
+  {h4:'五、科学发展观',pts:['第一要义：发展','核心立场：以人为本','基本要求：全面协调可持续','根本方法：统筹兼顾','建设社会主义和谐社会']},
+  {h4:'六、习近平新时代中国特色社会主义思想',pts:['"十个明确"：核心要义的集中概括','"十四个坚持"：基本方略','"十三个方面成就"：新时代历史性成就','中国式现代化五大特征','主要矛盾：人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾','新发展理念：创新、协调、绿色、开放、共享','五位一体总体布局','四个全面战略布局']},
+  {h4:'七、党的二十大重点',pts:['主题：高举中国特色社会主义伟大旗帜','新时代新征程党的中心任务','中国式现代化的本质要求','战略安排：两步走','高质量发展是首要任务','教育科技人才是基础性战略性支撑','全过程人民民主']},
+  {h4:'八、社会主义核心价值观',pts:['国家层面：富强、民主、文明、和谐','社会层面：自由、平等、公正、法治','公民层面：爱国、敬业、诚信、友善','融入法治建设和社会治理全过程']},
+  {h4:'九、全面深化改革',pts:['总目标：完善和发展中国特色社会主义制度，推进国家治理体系和治理能力现代化','党的二十届三中全会精神','六个坚持','七个聚焦','到2035年的目标']},
+  {h4:'十、乡村振兴与共同富裕',pts:['乡村振兴战略总要求：产业兴旺、生态宜居、乡风文明、治理有效、生活富裕','五大振兴','共同富裕是社会主义的本质要求','分阶段促进共同富裕','三次分配制度']},
+  {h4:'十一、全过程人民民主',pts:['本质：人民当家作主','特征：最广泛、最真实、最管用的民主','制度载体','选举民主与协商民主相结合','全链条、全方位、全覆盖的民主']},
+  {h4:'十二、依法治国与法治建设',pts:['全面依法治国总目标','十六字方针：科学立法、严格执法、公正司法、全民守法','依宪治国、依宪执政','法治国家、法治政府、法治社会一体建设','民法典']},
+  {h4:'十三、生态文明与新发展理念',pts:['新发展理念：创新、协调、绿色、开放、共享','绿水青山就是金山银山','碳达峰、碳中和','生态文明建设是"五位一体"总体布局的重要组成部分','坚持人与自然和谐共生']},
+  {h4:'十四、构建新发展格局',pts:['以国内大循环为主体、国内国际双循环相互促进','推动高质量发展','供给侧结构性改革：三去一降一补','扩大内需战略','建设现代化产业体系']},
+  {h4:'十五、党的建设',pts:['全面从严治党','党的政治建设摆在首位','思想建设、组织建设、作风建设','纪律建设、制度建设','反腐败斗争：不敢腐、不能腐、不想腐一体推进']}
+];
+
+var ouyangVideos=[
+  {t:'欧阳春晓·直腿训练',d:'10分钟 · 改善O型腿假胯宽',bg:'linear-gradient(135deg,#a8e6cf,#88d8a3)',url:'https://www.bilibili.com'},
+  {t:'欧阳春晓·消灭拜拜肉',d:'8分钟 · 手臂紧致',bg:'linear-gradient(135deg,#ffc1a0,#ffa07a)',url:'https://www.bilibili.com'},
+  {t:'欧阳春晓·改善假胯宽',d:'12分钟 · 调整腿型',bg:'linear-gradient(135deg,#c5e0f7,#a3d5ff)',url:'https://www.bilibili.com'},
+  {t:'欧阳春晓·马甲线核心',d:'10分钟 · 塑形燃脂',bg:'linear-gradient(135deg,#f3e4fb,#e9d4f5)',url:'https://www.bilibili.com'}
+];
+var otherVideos=[
+  {t:'周六野·瘦腿训练',d:'15分钟 · 大腿内侧紧致',bg:'linear-gradient(135deg,#ffdde1,#ee9ca7)',url:'https://www.bilibili.com'},
+  {t:'帕梅拉·手臂塑形',d:'10分钟 · 拜拜肉专项',bg:'linear-gradient(135deg,#ffe9b3,#ffd97a)',url:'https://www.bilibili.com'},
+  {t:'韩小四·改善腿型',d:'12分钟 · 直腿训练',bg:'linear-gradient(135deg,#c5e0f7,#7fc3ff)',url:'https://www.bilibili.com'},
+  {t:'美丽芭蕾·天鹅臂',d:'15分钟 · 手臂线条',bg:'linear-gradient(135deg,#f3e4fb,#d4b5f0)',url:'https://www.bilibili.com'}
+];
+
+/* ========== 主题配置 ========== */
+var themes={
+  pink:{
+    name:'🎀 温柔粉',
+    bg:'#f6efe8',bgDot:'transparent',sidebar:'#f8d7e0',sidebarText:'#5a3d45',
+    card:'#ffffff',accent:'#e27d8f',accentSoft:'#fde2e7',text:'#3a3531',textLight:'#8c8179',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  },
+  green:{
+    name:'🌱 清新绿',
+    bg:'#f6efe8',bgDot:'transparent',sidebar:'#d4e8d6',sidebarText:'#2e3a2f',
+    card:'#ffffff',accent:'#5fa963',accentSoft:'#dff0e0',text:'#3a3531',textLight:'#8c8179',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  },
+  purple:{
+    name:'💜 梦幻紫',
+    bg:'#f6efe8',bgDot:'transparent',sidebar:'#e0d4ee',sidebarText:'#4a3b55',
+    card:'#ffffff',accent:'#9b5fc0',accentSoft:'#f3e4fb',text:'#3a3531',textLight:'#8c8179',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  },
+  blue:{
+    name:'🩵 天空蓝',
+    bg:'#f6efe8',bgDot:'transparent',sidebar:'#d0e4f0',sidebarText:'#2c3e50',
+    card:'#ffffff',accent:'#4a90c7',accentSoft:'#ddeefb',text:'#3a3531',textLight:'#8c8179',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  },
+  warm:{
+    name:'🧡 暖杏黄',
+    bg:'#f6efe8',bgDot:'transparent',sidebar:'#f0e0c8',sidebarText:'#5a3d2a',
+    card:'#ffffff',accent:'#e89b4c',accentSoft:'#fff3d6',text:'#3a3531',textLight:'#8c8179',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  },
+  oat:{
+    name:'🥛 燕麦色',
+    bg:'#f6efe8',bgDot:'transparent',sidebar:'#e8ddd0',sidebarText:'#4a3b32',
+    card:'#ffffff',accent:'#a08070',accentSoft:'#f0e6dd',text:'#3a3531',textLight:'#8c8179',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  },
+  haze:{
+    name:'🌫️ 雾霾紫',
+    bg:'#f6f3f7',bgDot:'transparent',sidebar:'#e3dce8',sidebarText:'#514a57',
+    card:'#ffffff',accent:'#9b8aa6',accentSoft:'#ebe6f0',text:'#3a3531',textLight:'#928b99',
+    shadow:'0 4px 18px rgba(0,0,0,0.06)'
+  }
+};
+
+/* ========== 数据存储 ========== */
+var data={};
+var settings={theme:'green',navOrder:[],cloud:{url:'',key:'',userId:'',auto:false}};
+try{data=JSON.parse(localStorage.getItem('yiheyeData')||'{}');}catch(e){data={};}
+try{settings=JSON.parse(localStorage.getItem('yiheyeSettings')||'{}');}catch(e){settings={theme:'green',navOrder:[]};}
+if(!settings.theme)settings.theme='green';
+if(!settings.navOrder)settings.navOrder=[];
+if(!settings.cloud)settings.cloud={url:'',key:'',userId:'',auto:false};
+var def={
+  todo:[{text:'完成今日阅读30分钟',time:'09:00',done:false}],
+  done:[{text:'英语对话跟读练习',time:'07:00',done:true}],
+  reading:[{title:'被讨厌的勇气',progress:60},{title:'非暴力沟通',progress:30}],
+  movie:[],
+  sport:[],
+  saving:[],
+  news:[],
+  moods:[],
+  treeholes:[],
+  history:[],
+  travel:[],
+  booksReading:[],
+  booksFinished:[],
+  booksWishlist:[],
+  moviesWatched:[],
+  moviesWishlist:[]
+};
+function addHistory(type, title, detail){
+  ensure();
+  var now=new Date();
+  var rec={
+    type:type,
+    title:title||'',
+    detail:detail||'',
+    date:now.toLocaleDateString(),
+    time:now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+    ts:now.getTime()
+  };
+  data.history.unshift(rec);
+  // 最多保留 365 条
+  if(data.history.length>365){data.history.pop();}
+  save();
+}
+function ensure(){
+  for(var k in def){
+    if(data[k]===undefined||data[k]===null){
+      data[k]=JSON.parse(JSON.stringify(def[k]));
+    }
+  }
+  /* 数据迁移：旧reading数组 → 新三栏结构 */
+  if(data.reading&&data.reading.length>0&&!data._readingMigrated){
+    data.reading.forEach(function(b){
+      if(b.progress&&b.progress>=100){
+        data.booksFinished.push({title:b.title||'未知书名',author:'',finishDate:'',rating:0,review:''});
+      }else{
+        var pct=b.progress?b.progress+'%':'';
+        data.booksReading.push({title:b.title||'未知书名',author:'',startDate:'',page:pct,chapter:'',thoughts:''});
+      }
+    });
+    data._readingMigrated=true;
+    save();
+  }
+  /* 数据迁移：旧movie数组 → 新两栏结构 */
+  if(data.movie&&data.movie.length>0&&!data._movieMigrated){
+    data.movie.forEach(function(m){
+      data.moviesWatched.push({name:m.text||'未知片名',type:m.note||'电影',watchDate:'',rating:0,review:''});
+    });
+    data._movieMigrated=true;
+    save();
+  }
+}
+var _cloudTimer=null;
+function save(){
+  try{localStorage.setItem('yiheyeData',JSON.stringify(data));}catch(e){}
+  if(settings.cloud&&settings.cloud.auto&&settings.cloud.url&&settings.cloud.userId){
+    if(_cloudTimer)clearTimeout(_cloudTimer);
+    _cloudTimer=setTimeout(function(){cloudUpload(true);},800);
+  }
+}
+/* ========== 云端同步（Supabase） ========== */
+function cloudApiBase(){return settings.cloud.url.replace(/\/$/,'')+'/rest/v1/workbench_sync';}
+function cloudHeaders(){return {'Content-Type':'application/json','apikey':settings.cloud.key,'Authorization':'Bearer '+settings.cloud.key};}
+function cloudUpload(quiet){
+  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){if(!quiet)alert('请先在设置中填写云端配置');return;}
+  var payload={user_id:settings.cloud.userId,payload:data,updated_at:new Date().toISOString()};
+  fetch(cloudApiBase()+'?on_conflict=user_id',{
+    method:'POST',
+    headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify(payload)
+  }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)alert('✅ 已上传到云端');})
+  .catch(function(e){if(!quiet)alert('上传失败：'+e.message+'\n请检查 URL/Key 或网络');});
+}
+function cloudDownload(){
+  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){alert('请先在设置中填写云端配置');return;}
+  fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload',{headers:cloudHeaders()})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(arr){
+      if(arr&&arr.length>0&&arr[0].payload){
+        if(confirm('将从云端覆盖本地数据，确认？')){data=arr[0].payload;ensure();save();renderAll();alert('✅ 已从云端拉取并覆盖本地');}
+      }else{alert('云端暂无该同步ID的数据');}
+    })
+    .catch(function(e){alert('拉取失败：'+e.message);});
+}
+function cloudSaveConfig(){
+  settings.cloud.url=(document.getElementById('cloudUrl').value||'').trim();
+  settings.cloud.key=(document.getElementById('cloudKey').value||'').trim();
+  settings.cloud.userId=(document.getElementById('cloudUserId').value||'').trim();
+  settings.cloud.auto=document.getElementById('cloudAuto').checked;
+  saveSettings();
+  alert('☁️ 云端配置已保存\n同步ID：'+settings.cloud.userId+'\n自动同步：'+(settings.cloud.auto?'开':'关'));
+}
+function saveSettings(){try{localStorage.setItem('yiheyeSettings',JSON.stringify(settings));}catch(e){}}
+function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ========== 主题与导航 ========== */
+function applyTheme(name){
+  var t=themes[name]||themes.pink;
+  var r=document.documentElement;
+  r.style.setProperty('--bg',t.bg);
+  r.style.setProperty('--bg-dot',t.bgDot);
+  r.style.setProperty('--sidebar',t.sidebar);
+  r.style.setProperty('--sidebar-text',t.sidebarText);
+  r.style.setProperty('--card',t.card);
+  r.style.setProperty('--accent',t.accent);
+  r.style.setProperty('--accent-soft',t.accentSoft);
+  r.style.setProperty('--text',t.text);
+  r.style.setProperty('--text-light',t.textLight);
+  r.style.setProperty('--shadow',t.shadow);
+  document.querySelector('meta[name="theme-color"]').setAttribute('content',t.accent);
+  settings.theme=name;saveSettings();
+}
+function renderNav(){
+  var container=document.getElementById('navItems');
+  if(!container)return;
+  var buttons=Array.from(container.querySelectorAll('button[data-section]'));
+  var order=settings.navOrder.length>0?settings.navOrder:buttons.map(function(b){return b.dataset.section;});
+  order.forEach(function(sec){
+    var btn=buttons.find(function(b){return b.dataset.section===sec;});
+    if(btn)container.appendChild(btn);
+  });
+}
+function initNavDrag(){
+  var container=document.getElementById('navItems');
+  if(!container)return;
+  var dragged=null;
+  container.addEventListener('dragstart',function(e){
+    if(e.target.tagName==='BUTTON'){dragged=e.target;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','nav');}
+  });
+  container.addEventListener('dragend',function(e){
+    if(e.target.tagName==='BUTTON'){e.target.classList.remove('dragging');dragged=null;saveNavOrder();}
+  });
+  container.addEventListener('dragover',function(e){
+    e.preventDefault();
+    if(!dragged)return;
+    var target=e.target.closest('button');
+    if(!target||target===dragged)return;
+    var children=Array.from(container.children);
+    var a=children.indexOf(dragged),b=children.indexOf(target);
+    if(a<b)container.insertBefore(dragged,target.nextSibling);
+    else container.insertBefore(dragged,target);
+  });
+  container.addEventListener('drop',function(e){
+    e.preventDefault();
+    if(dragged){saveNavOrder();}
+  });
+}
+function saveNavOrder(){
+  var container=document.getElementById('navItems');
+  if(!container)return;
+  settings.navOrder=Array.from(container.querySelectorAll('button[data-section]')).map(function(b){return b.dataset.section;});
+  saveSettings();
+}
+
+/* ========== 导航点击 ========== */
+document.querySelectorAll('nav button').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    if(!btn.dataset.section)return;
+    document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+    document.getElementById(btn.dataset.section).classList.add('active');
+    renderAll();
+  });
+});
+
+/* ========== 渲染主函数 ========== */
+function renderAll(){
+  ensure();
+  var now=new Date();
+  document.getElementById('todayTitle').textContent=now.getMonth()+1+'月'+now.getDate()+'日';
+  var wk=['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('todaySub').textContent=wk[now.getDay()]+' | '+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  document.getElementById('dailyQuote').textContent=quotes[now.getDate()%quotes.length];
+  document.getElementById('doneCount').textContent=data.done.length;
+  document.getElementById('todoCount').textContent=data.todo.length;
+
+  renderTasks('todoList',data.todo,'todo');
+  renderTasks('doneList',data.done,'done');
+  renderMood();
+  renderTreehole();
+  renderBooksReading();
+  renderBooksFinished();
+  renderBooksWishlist();
+  renderMoviesWatched();
+  renderMoviesWishlist();
+  renderSportRecords();
+  renderCalendar();
+  renderSaving();
+  renderPol();
+  renderNews();
+  renderDailyNews();
+  renderHistory();
+  renderTravel();
+  renderTravelInspiration();
+}
+
+function renderTasks(elId,list,key){
+  var el=document.getElementById(elId);
+  if(!el)return;
+  el.innerHTML='';
+  if(!list||list.length===0){el.innerHTML='<div class="empty">暂无事项，点新增添加吧～</div>';return;}
+  list.forEach(function(item,i){
+    var div=document.createElement('div');
+    div.className='task-item'+(item.done?' done':'');
+    div.innerHTML='<div class="task-check '+(item.done?'checked':'')+'" onclick="toggleTask(\''+key+'\','+i+')">'+(item.done?'✓':'')+'</div>'+
+      '<div class="task-content"><div class="task-text">'+esc(item.text)+'</div>'+
+      (item.time?'<div class="task-meta">⏰ '+item.time+'</div>':'')+
+      (item.note?'<div class="task-meta">'+esc(item.note)+'</div>':'')+'</div>'+
+      '<button class="btn-small btn-edit" onclick="editTask(\''+key+'\','+i+')">编辑</button>'+
+      '<button class="btn-small btn-del" onclick="delTask(\''+key+'\','+i+')">删</button>';
+    el.appendChild(div);
+  });
+}
+
+/* ========== 任务操作 ========== */
+function addTask(key){
+  ensure();
+  var text=prompt('任务内容：');
+  if(!text)return;
+  var item={text:text.trim(),done:false};
+  if(key==='todo'||key==='done'){var time=prompt('时间（如 09:00，可选）：');if(time)item.time=time;addHistory('task',key==='done'?'添加已完成事项':'添加待办',item.text+(item.time?' · '+item.time:''));}
+  if(key==='movie'){var n=prompt('类型/备注：');if(n)item.note=n;addHistory('movie','新增影片',item.text+(item.note?' · '+item.note:''));}
+  if(key==='sport'){addHistory('sport','添加运动计划',item.text);}
+  data[key].push(item);save();renderAll();
+}
+function editTask(key,i){
+  ensure();
+  var it=data[key][i];
+  var t=prompt('修改内容：',it.text);
+  if(t===null)return;
+  it.text=t.trim();
+  if(it.time!==undefined){var time=prompt('时间：',it.time||'');if(time)it.time=time;}
+  addHistory('task','编辑事项',it.text+(it.time?' · '+it.time:''));
+  save();renderAll();
+}
+function delTask(key,i){
+  ensure();
+  var it=data[key][i];
+  if(confirm('确定删除吗？')){data[key].splice(i,1);addHistory('task','删除事项',it.text);save();renderAll();}
+}
+function toggleTask(key,i){
+  ensure();
+  var it=data[key][i];
+  it.done=!it.done;
+  if(key==='todo'&&it.done){data.todo.splice(i,1);data.done.push(it);addHistory('task','完成任务',it.text+(it.time?' · '+it.time:''));}
+  else if(key==='done'&&!it.done){data.done.splice(i,1);data.todo.push(it);addHistory('task','取消完成',it.text+(it.time?' · '+it.time:''));}
+  save();renderAll();
+}
+
+/* ========== 心情 ========== */
+var selectedMood='';
+document.querySelectorAll('.mood-card').forEach(function(c){
+  c.addEventListener('click',function(){
+    document.querySelectorAll('.mood-card').forEach(function(b){b.classList.remove('selected');});
+    c.classList.add('selected');selectedMood=c.dataset.mood;
+  });
+});
+function saveMood(){
+  ensure();
+  var note=document.getElementById('moodNote').value.trim();
+  if(!selectedMood&&!note){alert('请选择心情或写点什么');return;}
+  data.moods.unshift({mood:selectedMood,note:note,date:new Date().toLocaleString()});
+  addHistory('mood','记录心情',(selectedMood?selectedMood+' · ':'')+note);
+  save();renderAll();
+  document.getElementById('moodNote').value='';
+  selectedMood='';
+  document.querySelectorAll('.mood-card').forEach(function(b){b.classList.remove('selected');});
+}
+function renderMood(){
+  var el=document.getElementById('moodHistory');
+  el.innerHTML='';
+  if(data.moods.length===0)return;
+  var emojiMap={开心:'😊',一般:'😐',难过:'😢',生气:'😡',兴奋:'🤩'};
+  data.moods.forEach(function(m,i){
+    var div=document.createElement('div');
+    div.className='task-item';
+    div.innerHTML='<div style="font-size:28px;width:40px;text-align:center;">'+(emojiMap[m.mood]||'📝')+'</div>'+
+      '<div class="task-content"><div class="task-text">'+(m.mood?m.mood+' · ':'')+esc(m.note)+'</div>'+
+      '<div class="task-meta">'+m.date+'</div></div>'+
+      '<div class="book-actions">'+
+      '<button class="btn-small btn-edit" onclick="editMood('+i+')">编辑</button>'+
+      '<button class="btn-small btn-del" onclick="delMood('+i+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+function editMood(i){
+  ensure();
+  var m=data.moods[i];
+  var newNote=prompt('修改心情记录：',m.note||'');if(newNote===null)return;
+  m.note=newNote.trim();
+  var newMood=prompt('心情标签（开心/一般/难过/生气/兴奋，留空不变）：',m.mood||'');if(newMood!==null&&newMood.trim())m.mood=newMood.trim();
+  addHistory('mood','编辑心情',(m.mood?m.mood+' · ':'')+newNote);
+  save();renderMood();
+}
+function delMood(i){
+  if(confirm('删除这条心情记录？')){var m=data.moods[i];data.moods.splice(i,1);addHistory('mood','删除心情',(m.mood?m.mood+' · ':'')+m.note);save();renderMood();}
+}
+
+/* ========== 阅读存档本 ========== */
+function addBookReading(){
+  ensure();
+  var title=prompt('书名：');if(!title||!title.trim())return;
+  var author=prompt('作者（可选）：')||'';
+  var startDate=prompt('开始阅读日期（可选，如 2026-07-28）：')||'';
+  var page=prompt('当前进度（页码/百分比，如 120页 或 45%）：')||'';
+  var chapter=prompt('当前章节（可选）：')||'';
+  var thoughts=prompt('暂记感想（可选）：')||'';
+  var book={title:title.trim(),author:author.trim(),startDate:startDate.trim(),page:page.trim(),chapter:chapter.trim(),thoughts:thoughts.trim()};
+  data.booksReading.unshift(book);
+  addHistory('reading','添加在读书籍',book.title);
+  save();renderBooksReading();
+}
+function addBookFinished(){
+  ensure();
+  var title=prompt('书名：');if(!title||!title.trim())return;
+  var author=prompt('作者（可选）：')||'';
+  var finishDate=prompt('读完日期（可选，如 2026-07-28）：')||'';
+  var rating=parseInt(prompt('评分 1-5 星（可选）：')||'0');
+  if(isNaN(rating)||rating<1)rating=0;if(rating>5)rating=5;
+  var review=prompt('书评（可选）：')||'';
+  var pages=prompt('总页数/阅读页数（可选，如 320页）：')||'';
+  var book={title:title.trim(),author:author.trim(),finishDate:finishDate.trim(),rating:rating,review:review.trim(),pages:pages.trim()};
+  data.booksFinished.unshift(book);
+  addHistory('reading','添加已读书籍',book.title+(rating?' · '+rating+'星':''));
+  save();renderBooksFinished();
+}
+function addBookWishlist(){
+  ensure();
+  var title=prompt('书名：');if(!title||!title.trim())return;
+  var author=prompt('作者（可选）：')||'';
+  var note=prompt('备注（可选，如：朋友推荐/豆瓣高分）：')||'';
+  var book={title:title.trim(),author:author.trim(),note:note.trim()};
+  data.booksWishlist.unshift(book);
+  addHistory('reading','添加想看书籍',book.title);
+  save();renderBooksWishlist();
+}
+function editBookReading(i){
+  ensure();
+  var b=data.booksReading[i];
+  var title=prompt('书名：',b.title);if(title===null)return;b.title=title.trim();
+  var author=prompt('作者：',b.author||'');if(author!==null)b.author=author.trim();
+  var page=prompt('当前进度：',b.page||'');if(page!==null)b.page=page.trim();
+  var chapter=prompt('当前章节：',b.chapter||'');if(chapter!==null)b.chapter=chapter.trim();
+  var thoughts=prompt('暂记感想：',b.thoughts||'');if(thoughts!==null)b.thoughts=thoughts.trim();
+  save();renderBooksReading();
+}
+function editBookFinished(i){
+  ensure();
+  var b=data.booksFinished[i];
+  var title=prompt('书名：',b.title);if(title===null)return;b.title=title.trim();
+  var author=prompt('作者：',b.author||'');if(author!==null)b.author=author.trim();
+  var finishDate=prompt('读完日期：',b.finishDate||'');if(finishDate!==null)b.finishDate=finishDate.trim();
+  var rating=parseInt(prompt('评分 1-5 星：',b.rating||'0')||'0');
+  if(isNaN(rating))rating=0;if(rating>5)rating=5;b.rating=rating;
+  var review=prompt('书评：',b.review||'');if(review!==null)b.review=review.trim();
+  var pages=prompt('总页数/阅读页数：',b.pages||'');if(pages!==null)b.pages=pages.trim();
+  save();renderBooksFinished();
+}
+function editBookWishlist(i){
+  ensure();
+  var b=data.booksWishlist[i];
+  var title=prompt('书名：',b.title);if(title===null)return;b.title=title.trim();
+  var author=prompt('作者：',b.author||'');if(author!==null)b.author=author.trim();
+  var note=prompt('备注：',b.note||'');if(note!==null)b.note=note.trim();
+  save();renderBooksWishlist();
+}
+function delBookReading(i){if(confirm('删除这本在读书籍？')){var b=data.booksReading[i];data.booksReading.splice(i,1);addHistory('reading','删除在读书籍',b.title);save();renderBooksReading();}}
+function delBookFinished(i){if(confirm('删除这本已读书籍？')){var b=data.booksFinished[i];data.booksFinished.splice(i,1);addHistory('reading','删除已读书籍',b.title);save();renderBooksFinished();}}
+function delBookWishlist(i){if(confirm('删除这本想看书籍？')){var b=data.booksWishlist[i];data.booksWishlist.splice(i,1);addHistory('reading','删除想看书籍',b.title);save();renderBooksWishlist();}}
+function moveReadingToFinished(i){
+  ensure();
+  var b=data.booksReading[i];
+  var rating=parseInt(prompt('「'+b.title+'」读完啦！评分 1-5 星（可选）：')||'0');
+  if(isNaN(rating)||rating<1)rating=0;if(rating>5)rating=5;
+  var review=prompt('书评（可选）：')||'';
+  var finishDate=new Date().toLocaleDateString();
+  data.booksFinished.unshift({title:b.title,author:b.author||'',finishDate:finishDate,rating:rating,review:review.trim(),pages:''});
+  data.booksReading.splice(i,1);
+  addHistory('reading','读完一本书',b.title+(rating?' · '+rating+'星':''));
+  save();renderBooksReading();renderBooksFinished();
+}
+function renderStar(rating){
+  var s='';
+  for(var i=1;i<=5;i++){s+='<span class="'+(i<=rating?'star-on':'star-off')+'">★</span>';}
+  return '<span class="star-rating">'+s+'</span>';
+}
+function renderBooksReading(){
+  var el=document.getElementById('booksReadingList');if(!el)return;
+  el.innerHTML='';
+  if(data.booksReading.length===0){el.innerHTML='<div class="empty">暂无在读书籍</div>';return;}
+  data.booksReading.forEach(function(b,i){
+    var div=document.createElement('div');
+    div.className='book-card';
+    div.innerHTML='<div class="book-icon reading">📖</div>'+
+      '<div class="book-detail">'+
+      '<div class="book-title">'+esc(b.title)+'</div>'+
+      (b.author?'<div class="book-author">✍️ '+esc(b.author)+'</div>':'')+
+      (b.startDate?'<div class="book-meta">📅 开始：'+esc(b.startDate)+'</div>':'')+
+      (b.page?'<div class="book-progress">📍 进度：'+esc(b.page)+(b.chapter?' · '+esc(b.chapter):'')+'</div>':'')+
+      (b.thoughts?'<div class="book-thoughts">'+esc(b.thoughts)+'</div>':'')+
+      '</div>'+
+      '<div class="book-actions">'+
+      '<button class="btn-small btn-edit" onclick="moveReadingToFinished('+i+')" title="读完">✅</button>'+
+      '<button class="btn-small btn-edit" onclick="editBookReading('+i+')">编辑</button>'+
+      '<button class="btn-small btn-del" onclick="delBookReading('+i+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+function renderBooksFinished(){
+  var el=document.getElementById('booksFinishedList');if(!el)return;
+  el.innerHTML='';
+  if(data.booksFinished.length===0){el.innerHTML='<div class="empty">暂无已读书籍</div>';return;}
+  data.booksFinished.forEach(function(b,i){
+    var div=document.createElement('div');
+    div.className='book-card';
+    div.innerHTML='<div class="book-icon finished">📚</div>'+
+      '<div class="book-detail">'+
+      '<div class="book-title">'+esc(b.title)+'</div>'+
+      (b.author?'<div class="book-author">✍️ '+esc(b.author)+'</div>':'')+
+      (b.finishDate?'<div class="book-meta">📅 读完：'+esc(b.finishDate)+'</div>':'')+
+      (b.rating>0?'<div class="book-meta">'+renderStar(b.rating)+'</div>':'')+
+      (b.pages?'<div class="book-meta">📄 '+esc(b.pages)+'</div>':'')+
+      (b.review?'<div class="book-review">'+esc(b.review)+'</div>':'')+
+      '</div>'+
+      '<div class="book-actions">'+
+      '<button class="btn-small btn-edit" onclick="editBookFinished('+i+')">编辑</button>'+
+      '<button class="btn-small btn-del" onclick="delBookFinished('+i+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+function renderBooksWishlist(){
+  var el=document.getElementById('booksWishlistList');if(!el)return;
+  el.innerHTML='';
+  if(data.booksWishlist.length===0){el.innerHTML='<div class="empty">暂无想看书籍</div>';return;}
+  data.booksWishlist.forEach(function(b,i){
+    var div=document.createElement('div');
+    div.className='book-card';
+    div.innerHTML='<div class="book-icon wishlist">📝</div>'+
+      '<div class="book-detail">'+
+      '<div class="book-title">'+esc(b.title)+'</div>'+
+      (b.author?'<div class="book-author">✍️ '+esc(b.author)+'</div>':'')+
+      (b.note?'<div class="book-meta">📌 '+esc(b.note)+'</div>':'')+
+      '</div>'+
+      '<div class="book-actions">'+
+      '<button class="btn-small btn-edit" onclick="moveWishlistToReading('+i+')" title="开始阅读">📖</button>'+
+      '<button class="btn-small btn-del" onclick="delBookWishlist('+i+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+function moveWishlistToReading(i){
+  ensure();
+  var b=data.booksWishlist[i];
+  data.booksReading.unshift({title:b.title,author:b.author||'',startDate:new Date().toLocaleDateString(),page:'',chapter:'',thoughts:''});
+  data.booksWishlist.splice(i,1);
+  addHistory('reading','开始阅读',b.title);
+  save();renderBooksReading();renderBooksWishlist();
+}
+
+
+/* ========== 影视存档本 ========== */
+function addMovieWatched(){
+  ensure();
+  var name=prompt('片名：');if(!name||!name.trim())return;
+  var type=prompt('类型（如：电影/电视剧/纪录片/动画）：')||'电影';
+  var watchDate=prompt('观看日期（可选，如 2026-07-28）：')||'';
+  var rating=parseInt(prompt('评分 1-5 星（可选）：')||'0');
+  if(isNaN(rating)||rating<1)rating=0;if(rating>5)rating=5;
+  var review=prompt('影评（可选）：')||'';
+  var movie={name:name.trim(),type:type.trim(),watchDate:watchDate.trim(),rating:rating,review:review.trim()};
+  data.moviesWatched.unshift(movie);
+  addHistory('movie','添加已看影片',movie.name+(rating?' · '+rating+'星':''));
+  save();renderMoviesWatched();
+}
+function addMovieWishlist(){
+  ensure();
+  var name=prompt('片名：');if(!name||!name.trim())return;
+  var type=prompt('类型（如：电影/电视剧/纪录片/动画）：')||'电影';
+  var note=prompt('备注（可选，如：朋友推荐/豆瓣高分）：')||'';
+  var movie={name:name.trim(),type:type.trim(),note:note.trim()};
+  data.moviesWishlist.unshift(movie);
+  addHistory('movie','添加片单备选',movie.name);
+  save();renderMoviesWishlist();
+}
+function editMovieWatched(i){
+  ensure();
+  var m=data.moviesWatched[i];
+  var name=prompt('片名：',m.name);if(name===null)return;m.name=name.trim();
+  var type=prompt('类型：',m.type||'电影');if(type!==null)m.type=type.trim();
+  var watchDate=prompt('观看日期：',m.watchDate||'');if(watchDate!==null)m.watchDate=watchDate.trim();
+  var rating=parseInt(prompt('评分 1-5 星：',m.rating||'0')||'0');
+  if(isNaN(rating))rating=0;if(rating>5)rating=5;m.rating=rating;
+  var review=prompt('影评：',m.review||'');if(review!==null)m.review=review.trim();
+  save();renderMoviesWatched();
+}
+function editMovieWishlist(i){
+  ensure();
+  var m=data.moviesWishlist[i];
+  var name=prompt('片名：',m.name);if(name===null)return;m.name=name.trim();
+  var type=prompt('类型：',m.type||'电影');if(type!==null)m.type=type.trim();
+  var note=prompt('备注：',m.note||'');if(note!==null)m.note=note.trim();
+  save();renderMoviesWishlist();
+}
+function delMovieWatched(i){if(confirm('删除这部已看影片？')){var m=data.moviesWatched[i];data.moviesWatched.splice(i,1);addHistory('movie','删除已看影片',m.name);save();renderMoviesWatched();}}
+function delMovieWishlist(i){if(confirm('删除这部片单备选？')){var m=data.moviesWishlist[i];data.moviesWishlist.splice(i,1);addHistory('movie','删除片单备选',m.name);save();renderMoviesWishlist();}}
+function moveMovieWishlistToWatched(i){
+  ensure();
+  var m=data.moviesWishlist[i];
+  var rating=parseInt(prompt('「'+m.name+'」看完啦！评分 1-5 星（可选）：')||'0');
+  if(isNaN(rating)||rating<1)rating=0;if(rating>5)rating=5;
+  var review=prompt('影评（可选）：')||'';
+  var watchDate=new Date().toLocaleDateString();
+  data.moviesWatched.unshift({name:m.name,type:m.type,watchDate:watchDate,rating:rating,review:review.trim()});
+  data.moviesWishlist.splice(i,1);
+  addHistory('movie','看完影片',m.name+(rating?' · '+rating+'星':''));
+  save();renderMoviesWatched();renderMoviesWishlist();
+}
+function renderMoviesWatched(){
+  var el=document.getElementById('moviesWatchedList');if(!el)return;
+  el.innerHTML='';
+  if(data.moviesWatched.length===0){el.innerHTML='<div class="empty">暂无已观看影片</div>';return;}
+  data.moviesWatched.forEach(function(m,i){
+    var div=document.createElement('div');
+    div.className='movie-card';
+    div.innerHTML='<div class="movie-icon watched">🎬</div>'+
+      '<div class="movie-detail">'+
+      '<div class="movie-name">'+esc(m.name)+'</div>'+
+      '<div class="movie-type">🎭 '+esc(m.type||'电影')+'</div>'+
+      (m.watchDate?'<div class="movie-meta">📅 '+esc(m.watchDate)+'</div>':'')+
+      (m.rating>0?'<div class="movie-meta">'+renderStar(m.rating)+'</div>':'')+
+      (m.review?'<div class="movie-review-text">'+esc(m.review)+'</div>':'')+
+      '</div>'+
+      '<div class="movie-actions">'+
+      '<button class="btn-small btn-edit" onclick="editMovieWatched('+i+')">编辑</button>'+
+      '<button class="btn-small btn-del" onclick="delMovieWatched('+i+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+function renderMoviesWishlist(){
+  var el=document.getElementById('moviesWishlistList');if(!el)return;
+  el.innerHTML='';
+  if(data.moviesWishlist.length===0){el.innerHTML='<div class="empty">暂无片单备选</div>';return;}
+  data.moviesWishlist.forEach(function(m,i){
+    var div=document.createElement('div');
+    div.className='movie-card';
+    div.innerHTML='<div class="movie-icon wishlist">📝</div>'+
+      '<div class="movie-detail">'+
+      '<div class="movie-name">'+esc(m.name)+'</div>'+
+      '<div class="movie-type">🎭 '+esc(m.type||'电影')+'</div>'+
+      (m.note?'<div class="movie-meta">📌 '+esc(m.note)+'</div>':'')+
+      '</div>'+
+      '<div class="movie-actions">'+
+      '<button class="btn-small btn-edit" onclick="moveMovieWishlistToWatched('+i+')" title="已看完">🎬</button>'+
+      '<button class="btn-small btn-del" onclick="delMovieWishlist('+i+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+
+/* ========== 运动 ========== */
+var calCursor=new Date();
+function renderCalendar(){
+  var now=new Date();
+  if(!calCursor)calCursor=new Date();
+  var y=calCursor.getFullYear(),m=calCursor.getMonth();
+  document.getElementById('calMonth').innerHTML='📅 '+y+'年'+(m+1)+'月 '+
+    '<span style="margin-left:8px;">'+
+    '<button class="btn-small btn-edit" onclick="calMove(-1)" style="margin-right:4px;">‹</button>'+
+    '<button class="btn-small btn-edit" onclick="calMove(1)">›</button></span>'+
+    '<button class="btn-small btn-edit" onclick="calBackToday()" style="margin-left:8px;">今天</button>';
+  var grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  ['日','一','二','三','四','五','六'].forEach(function(h){
+    var d=document.createElement('div');d.className='cal-head';d.textContent=h;grid.appendChild(d);
+  });
+  var first=new Date(y,m,1).getDay();
+  var last=new Date(y,m+1,0).getDate();
+  var prev=new Date(y,m,0).getDate();
+  for(var i=first-1;i>=0;i--){
+    var d=document.createElement('div');d.className='cal-day muted';
+    d.innerHTML='<span class="cal-num">'+(prev-i)+'</span>';
+    grid.appendChild(d);
+  }
+  for(var dd=1;dd<=last;dd++){
+    var el=document.createElement('div');
+    var isToday=(dd===now.getDate()&&m===now.getMonth()&&y===now.getFullYear());
+    var dateStr=y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+    var hasSport=data.sport.some(function(s){return s.note===dateStr||new Date(s.note).toLocaleDateString()===new Date(y,m,dd).toLocaleDateString();});
+    el.className='cal-day'+(isToday?' active':'')+(hasSport?' has-sport':'');
+    el.innerHTML='<span class="cal-num">'+dd+'</span>'+(hasSport?'<span class="cal-mark">✓</span>':'');
+    el.onclick=function(day){return function(){sportPickDate(y,m,day);};}(dd);
+    grid.appendChild(el);
+  }
+  var remain=(7-(grid.children.length%7))%7;
+  for(var i=1;i<=remain;i++){
+    var d=document.createElement('div');d.className='cal-day muted';
+    d.innerHTML='<span class="cal-num">'+i+'</span>';
+    grid.appendChild(d);
+  }
+}
+function calMove(delta){
+  calCursor.setMonth(calCursor.getMonth()+delta);
+  renderCalendar();
+}
+function calBackToday(){
+  calCursor=new Date();
+  renderCalendar();
+}
+function sportPickDate(y,m,d){
+  var dateStr=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  var dateDisplay=new Date(y,m,d).toLocaleDateString();
+  var existing=data.sport.filter(function(s){return s.note===dateStr||new Date(s.note).toLocaleDateString()===dateDisplay;});
+  var msg='补录运动 - '+dateDisplay+'\n';
+  if(existing.length>0){
+    msg+='当天已有记录：\n';
+    existing.forEach(function(s,i){msg+=(i+1)+'. '+s.text+'\n';});
+    msg+='\n输入新的运动内容（留空则删除当天最后一条记录）：';
+  }else{
+    msg+='输入运动内容（如：欧阳春晓直腿训练 10min）：';
+  }
+  var text=prompt(msg);
+  if(text===null)return;
+  if(text.trim()===''){
+    if(existing.length>0){
+      if(confirm('删除当天最后一条记录？')){data.sport.splice(data.sport.indexOf(existing[existing.length-1]),1);addHistory('sport','删除补录',dateDisplay);save();renderAll();}
+    }
+    return;
+  }
+  data.sport.push({text:text.trim(),note:dateStr,done:true});
+  addHistory('sport','补录运动',text.trim()+' · '+dateDisplay);
+  save();renderAll();
+}
+function renderSportRecords(){
+  var el=document.getElementById('sportRecordList');if(!el)return;
+  el.innerHTML='';
+  var records=data.sport.filter(function(s){return s.text;});
+  if(records.length===0){el.innerHTML='<div class="empty">暂无运动记录，点击日历日期或上方输入框记录</div>';return;}
+  records.reverse().forEach(function(s){
+    var realIdx=data.sport.indexOf(s);
+    var div=document.createElement('div');
+    div.className='task-item';
+    div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.text)+'</div>'+
+      '<div class="task-meta">📅 '+esc(s.note||'')+'</div></div>'+
+      '<button class="btn-small btn-del" onclick="delSportRecord('+realIdx+')">删</button>';
+    el.appendChild(div);
+  });
+}
+function delSportRecord(i){
+  if(confirm('删除这条运动记录？')){var s=data.sport[i];data.sport.splice(i,1);addHistory('sport','删除运动记录',s.text);save();renderAll();}
+}
+function sportCheckin(){
+  ensure();
+  var input=document.getElementById('sportInput');
+  var text=input.value.trim();
+  if(!text){alert('请输入今天练了什么');return;}
+  var now=new Date();var dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');data.sport.push({text:text,note:dateStr,done:true});
+  addHistory('sport','运动打卡',text);
+  save();renderAll();
+  input.value='';
+}
+function renderVideos(elId,list){
+  var el=document.getElementById(elId);
+  el.innerHTML='';
+  list.forEach(function(v){
+    var div=document.createElement('div');
+    div.className='course-card';
+    div.onclick=function(){window.open(v.url,'_blank');};
+    div.innerHTML='<div class="course-thumb" style="background:'+v.bg+';"><div class="play">▶</div></div>'+
+      '<div class="course-info"><div class="t">'+esc(v.t)+'</div><div class="d">'+esc(v.d)+'</div></div>';
+    el.appendChild(div);
+  });
+}
+
+/* ========== 存钱 ========== */
+function addSaving(){
+  ensure();
+  var amount=parseFloat(document.getElementById('saveAmount').value);
+  if(isNaN(amount)||amount<=0){alert('请输入金额');return;}
+  data.saving.push({amount:amount,date:new Date().toLocaleDateString()});
+  addHistory('saving','存入一笔','¥'+amount.toFixed(2));
+  save();renderAll();
+  document.getElementById('saveAmount').value='';
+}
+function renderSaving(){
+  var total=0;
+  data.saving.forEach(function(x){total+=x.amount;});
+  var goal=10000;
+  var pct=Math.min(100,Math.round(total/goal*100));
+  document.getElementById('savedTotal').textContent='¥'+total;
+  document.getElementById('savedPercent').textContent=pct+'%';
+  document.getElementById('saveProgress').style.width=pct+'%';
+  var el=document.getElementById('savingList');
+  el.innerHTML='';
+  if(data.saving.length===0){el.innerHTML='<div class="empty">还没有存入记录</div>';return;}
+  data.saving.slice().reverse().forEach(function(s,i){
+    var realIdx=data.saving.length-1-i;
+    var div=document.createElement('div');
+    div.className='task-item';
+    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">'+s.date+'</div></div>'+
+      '<button class="btn-small btn-del" onclick="delSaving('+realIdx+')">删</button>';
+    el.appendChild(div);
+  });
+}
+function delSaving(i){var s=data.saving[i];data.saving.splice(i,1);addHistory('saving','删除存入','¥'+s.amount.toFixed(2));save();renderAll();}
+
+/* ========== 时政 ========== */
+function addNews(){
+  ensure();
+  var t=prompt('时政标题：');
+  if(!t)return;
+  var n=prompt('简述：');
+  data.news.unshift({title:t.trim(),note:n||'',date:new Date().toLocaleDateString()});
+  addHistory('politics','新增时政',t.trim()+(n?' · '+n:''));
+  save();renderNews();
+}
+function polSearch(){
+  var kw=document.getElementById('polSearchInput').value.trim();
+  var box=document.getElementById('polSearchResults');
+  if(!kw){box.innerHTML='<div class="empty">请输入搜索关键词</div>';return;}
+  box.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-light);">🔍 搜索中...</div>';
+  var found=[];
+  var kwLower=kw.toLowerCase();
+  polTemplate.forEach(function(p){
+    var matched=[];
+    p.pts.forEach(function(pt){
+      if(pt.toLowerCase().indexOf(kwLower)>=0||p.h4.toLowerCase().indexOf(kwLower)>=0){
+        matched.push(pt);
+      }
+    });
+    if(matched.length>0||p.h4.toLowerCase().indexOf(kwLower)>=0){
+      found.push({h4:p.h4,pts:matched.length>0?matched:p.pts});
+    }
+  });
+  var html='';
+  if(found.length>0){
+    html+='<div style="margin-bottom:10px;color:var(--text-light);font-size:13px;">📚 本地理论库匹配到 '+found.length+' 条：</div>';
+    found.forEach(function(f){
+      html+='<div class="search-result" onclick="window.open(\'https://www.baidu.com/s?wd='+encodeURIComponent(kw+' '+f.h4)+'\',\'_blank\')">'+
+        '<div class="t">'+esc(f.h4)+'</div>'+
+        '<div class="d">'+f.pts.map(function(pt){return '• '+esc(pt);}).join('<br>')+'</div>'+
+        '<div style="margin-top:6px;"><span class="search-tag">点击查看详情</span></div>'+
+        '</div>';
+    });
+  }
+  html+='<div style="margin-top:14px;">';
+  html+='<div style="margin-bottom:10px;color:var(--text-light);font-size:13px;">🌐 在线搜索：</div>';
+  html+='<div class="search-result" onclick="window.open(\'https://www.baidu.com/s?wd='+encodeURIComponent(kw)+'\',\'_blank\')">'+
+    '<div class="t">🔍 百度搜索：'+esc(kw)+'</div><div class="d">点击查看百度搜索结果</div></div>';
+  html+='<div class="search-result" onclick="window.open(\'https://www.google.com/search?q='+encodeURIComponent(kw)+'\',\'_blank\')">'+
+    '<div class="t">🔍 Google：'+esc(kw)+'</div><div class="d">点击查看 Google 搜索结果</div></div>';
+  html+='<div class="search-result" onclick="window.open(\'https://so.toutiao.com/search?keyword='+encodeURIComponent(kw)+'\',\'_blank\')">'+
+    '<div class="t">🔍 今日头条：'+esc(kw)+'</div><div class="d">点击查看头条搜索结果</div></div>';
+  html+='<div class="search-result" onclick="window.open(\'https://www.gov.cn/search/index.html?q='+encodeURIComponent(kw)+'\',\'_blank\')">'+
+    '<div class="t">🔍 中国政府网：'+esc(kw)+'</div><div class="d">点击查看政府网搜索结果</div></div>';
+  html+='</div>';
+  box.innerHTML=html;
+}
+function fetchLatestNews(){
+  var el=document.getElementById('dailyNews');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-light);">🔄 正在获取最新时政...</div>';
+  var cbName='jsonp_cb_'+Date.now();
+  window[cbName]=function(resp){
+    var html='';
+    if(resp&&resp.items&&resp.items.length>0){
+      resp.items.slice(0,5).forEach(function(item){
+        html+='<div class="news-item">'+
+          '<div class="date">📅 '+esc(item.date||'今日')+'</div>'+
+          '<div class="t">'+esc(item.title)+'</div>'+
+          '<div class="d">'+esc(item.summary||item.desc||'')+'</div>'+
+          '</div>';
+      });
+      el.innerHTML=html;
+    }
+    delete window[cbName];
+  };
+  var script=document.createElement('script');
+  script.src='https://api.muxiaoguo.cn/api/NewsGet?api_key=null&type=guonei&cb='+cbName;
+  script.onerror=function(){
+    delete window[cbName];
+    var now=new Date();
+    var idx=(now.getDate()+now.getMonth()*31)%dailyNewsPool.length;
+    var item=dailyNewsPool[idx];
+    el.innerHTML='<div class="news-item"><div class="date">📅 '+now.toLocaleDateString()+' · 每日时政</div><div class="t">'+esc(item.t)+'</div><div class="d">'+esc(item.d)+'</div></div>'+
+      '<div style="text-align:center;padding:10px;color:var(--text-light);font-size:13px;">⚠️ 在线获取失败，已显示本地时政。可点击下方按钮手动搜索最新内容</div>'+
+      '<div style="text-align:center;margin-top:8px;"><button class="btn-add" onclick="window.open(\'https://www.baidu.com/s?wd=今日时政热点\',\'_blank\')">手动搜索今日时政</button></div>';
+  };
+  document.body.appendChild(script);
+}
+function renderDailyNews(){
+  var now=new Date();
+  var idx=(now.getDate()+now.getMonth()*31)%dailyNewsPool.length;
+  var item=dailyNewsPool[idx];
+  var el=document.getElementById('dailyNews');
+  el.innerHTML='';
+  var div=document.createElement('div');
+  div.className='news-item';
+  div.innerHTML='<div class="date">📅 '+now.toLocaleDateString()+' · 每日时政</div><div class="t">'+esc(item.t)+'</div><div class="d">'+esc(item.d)+'</div>';
+  el.appendChild(div);
+}
+function renderPol(){
+  var el=document.getElementById('polList');
+  el.innerHTML='';
+  polTemplate.forEach(function(p){
+    var div=document.createElement('div');
+    div.className='pols-card';
+    var ptsHtml=p.pts.map(function(x){return '<div>'+esc(x)+'</div>';}).join('');
+    div.innerHTML='<h4>'+esc(p.h4)+'</h4><div class="pts">'+ptsHtml+'</div>';
+    el.appendChild(div);
+  });
+}
+function renderNews(){
+  var el=document.getElementById('newsList');
+  el.innerHTML='';
+  if(data.news.length===0){el.innerHTML='<div class="empty">暂无时政记录，点新增添加吧～</div>';return;}
+  data.news.forEach(function(n,i){
+    var div=document.createElement('div');
+    div.className='news-item';
+    div.innerHTML='<div class="date">'+n.date+'</div><div class="t">'+esc(n.title)+'</div><div class="d">'+esc(n.note)+'</div>'+
+      '<div style="text-align:right;margin-top:8px;"><button class="btn-small btn-del" onclick="delNews('+i+')">删</button></div>';
+    el.appendChild(div);
+  });
+}
+function delNews(i){var n=data.news[i];data.news.splice(i,1);addHistory('politics','删除时政',n.title);save();renderNews();}
+
+/* ========== 树洞 ========== */
+var selectedTag='';
+document.querySelectorAll('.th-tag').forEach(function(t){
+  t.addEventListener('click',function(){
+    document.querySelectorAll('.th-tag').forEach(function(b){b.classList.remove('selected');});
+    if(selectedTag===t.dataset.tag){selectedTag='';}
+    else{t.classList.add('selected');selectedTag=t.dataset.tag;}
+  });
+});
+var replies=['抱抱你，记得你比想象中更勇敢。','把心事说出来就已经很棒了。','今天辛苦了，明天又是新的一天。','允许自己慢一点，没关系。','你值得被温柔以待。','谢谢你愿意倾诉，树洞一直都在。'];
+function saveTreehole(){
+  ensure();
+  var t=document.getElementById('treeholeInput').value.trim();
+  if(!t&&!selectedTag){alert('写点什么再投进去吧');return;}
+  data.treeholes.unshift({text:t,tag:selectedTag,date:new Date().toLocaleString()});
+  addHistory('treehole','投递树洞',(selectedTag?selectedTag+' ':'')+t);
+  save();renderTreehole();
+  document.getElementById('treeholeInput').value='';
+  selectedTag='';
+  document.querySelectorAll('.th-tag').forEach(function(b){b.classList.remove('selected');});
+  var r=document.getElementById('treeholeReply');
+  r.style.display='block';
+  r.innerHTML='<b>💌 树洞回信：</b><br>'+replies[Math.floor(Math.random()*replies.length)];
+  setTimeout(function(){r.style.display='none';},6000);
+}
+function renderTreehole(){
+  var el=document.getElementById('treeholeList');
+  el.innerHTML='';
+  if(data.treeholes.length===0){el.innerHTML='<div class="empty">还没有心事记录~</div>';return;}
+  data.treeholes.forEach(function(h,i){
+    var div=document.createElement('div');
+    div.className='task-item';
+    div.innerHTML='<div class="task-content"><div class="task-text">'+(h.tag?h.tag+' ':'')+esc(h.text)+'</div><div class="task-meta">'+h.date+'</div></div>'+
+      '<button class="btn-small btn-del" onclick="delTreehole('+i+')">删</button>';
+    el.appendChild(div);
+  });
+}
+function delTreehole(i){data.treeholes.splice(i,1);addHistory('treehole','删除心事','树洞记录');save();renderTreehole();}
+function clearTreehole(){if(confirm('清空所有心事记录吗？')){data.treeholes=[];addHistory('treehole','清空树洞','所有心事记录已清空');save();renderTreehole();}}
+
+/* ========== 历史记录 ========== */
+function setHistoryToday(){
+  var input=document.getElementById('historyDate');
+  if(input){
+    var now=new Date();
+    input.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  }
+  renderHistory();
+}
+function renderHistory(){
+  var input=document.getElementById('historyDate');
+  if(!input)return;
+  if(!input.value){setHistoryToday();return;}
+  ensure();
+  var dateStr=new Date(input.value).toLocaleDateString();
+  var listEl=document.getElementById('historyList');
+  listEl.innerHTML='';
+  var dayRecords=data.history.filter(function(r){return r.date===dateStr;});
+  if(dayRecords.length===0){listEl.innerHTML='<div class="empty">今天还没有记录，去其他模块添加吧～</div>';}
+  else{
+    dayRecords.forEach(function(r){
+      var iconMap={task:'📝',mood:'🤍',reading:'📖',movie:'🎬',sport:'🧘',saving:'🏦',politics:'🏛️',treehole:'🌳',travel:'✈️',setting:'⚙️'};
+      var div=document.createElement('div');
+      div.className='task-item';
+      div.innerHTML='<div style="font-size:24px;width:34px;text-align:center;">'+(iconMap[r.type]||'📌')+'</div>'+
+        '<div class="task-content"><div class="task-text">'+esc(r.title)+'</div>'+
+        '<div class="task-meta">'+esc(r.detail)+' · '+r.time+'</div></div>';
+      listEl.appendChild(div);
+    });
+  }
+  // 近7天统计
+  var statsEl=document.getElementById('historyStats');
+  var counts={};
+  var now=new Date();
+  for(var i=0;i<7;i++){
+    var d=new Date(now);d.setDate(d.getDate()-i);
+    var ds=d.toLocaleDateString();
+    counts[ds]=data.history.filter(function(r){return r.date===ds;}).length;
+  }
+  var html='<div style="display:flex;align-items:flex-end;gap:10px;height:90px;padding-top:10px;">';
+  var max=Math.max(1,Math.max.apply(null,Object.values(counts)));
+  for(i=6;i>=0;i--){
+    d=new Date(now);d.setDate(d.getDate()-i);
+    ds=d.toLocaleDateString();
+    var n=counts[ds]||0;
+    var h=Math.max(8,Math.round(n/max*70));
+    var label=(d.getMonth()+1)+'/'+d.getDate();
+    html+='<div style="flex:1;text-align:center;"><div style="height:'+h+'px;background:var(--accent);border-radius:8px 8px 0 0;opacity:'+(n>0?1:0.3)+';"></div><div style="font-size:11px;color:var(--text-light);margin-top:6px;">'+label+'</div><div style="font-size:12px;font-weight:700;">'+n+'</div></div>';
+  }
+  html+='</div>';
+  statsEl.innerHTML=html;
+}
+function clearHistory(){if(confirm('确定清空所有历史记录吗？')){data.history=[];save();renderHistory();}}
+
+/* ========== 旅游日记 ========== */
+var travelInspiration=[
+  {icon:'🏔️',place:'云南大理',tags:['慢生活','洱海','拍照'],desc:'适合放空和拍婚纱照外景'},
+  {icon:'⛩️',place:'日本京都',tags:['古都','红叶','美食'],desc:'千年古都与四季风物诗'},
+  {icon:'🏖️',place:'福建平潭',tags:['蓝眼泪','海岛','骑行'],desc:' chasing 蓝眼泪的浪漫海岛'},
+  {icon:'🌸',place:'贵州荔波',tags:['山水','苗寨','避暑'],desc:'地球腰带上的绿宝石'},
+  {icon:'🏜️',place:'甘肃敦煌',tags:['沙漠','石窟','星空'],desc:'一眼千年，大漠孤烟直'},
+  {icon:'🌊',place:'广西北海',tags:['银滩','海鲜','日落'],desc:'慢节奏的海滨小城'}
+];
+var travelStatus='want';
+var travelFilter='all';
+document.querySelectorAll('.ts-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.ts-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    travelStatus=btn.dataset.status;
+  });
+});
+document.querySelectorAll('#travelFilter button').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('#travelFilter button').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    travelFilter=btn.dataset.filter;
+    renderTravel();
+  });
+});
+function addTravel(place,date,note,status){
+  ensure();
+  var p=place||document.getElementById('travelPlace').value.trim();
+  var d=date||document.getElementById('travelDate').value.trim();
+  var companions=document.getElementById('travelCompanions')?document.getElementById('travelCompanions').value.trim():'';
+  var album=document.getElementById('travelAlbum')?document.getElementById('travelAlbum').value.trim():'';
+  var n=note||document.getElementById('travelNote').value.trim();
+  var reflection=document.getElementById('travelReflection')?document.getElementById('travelReflection').value.trim():'';
+  var s=status||travelStatus;
+  if(!p){alert('请输入目的地');return;}
+  data.travel.unshift({place:p,date:d,companions:companions,album:album,note:n,reflection:reflection,status:s,guide:null,created:new Date().toLocaleString()});
+  addHistory('travel','添加旅行',p+' · '+({want:'想去',plan:'规划中',done:'已去',again:'还想去'}[s]||'想去'));
+  save();renderAll();
+  if(!place){
+    document.getElementById('travelPlace').value='';
+    if(document.getElementById('travelDate'))document.getElementById('travelDate').value='';
+    if(document.getElementById('travelCompanions'))document.getElementById('travelCompanions').value='';
+    if(document.getElementById('travelAlbum'))document.getElementById('travelAlbum').value='';
+    document.getElementById('travelNote').value='';
+    if(document.getElementById('travelReflection'))document.getElementById('travelReflection').value='';
+  }
+}
+function addInspiration(i){
+  var item=travelInspiration[i];
+  addTravel(item.place,'','想去：'+item.desc,'want');
+}
+function changeTravelStatus(i,newStatus){
+  ensure();
+  var t=data.travel[i];
+  t.status=newStatus;
+  addHistory('travel','修改状态',t.place+' · '+({want:'想去',plan:'规划中',done:'已去',again:'还想去'}[newStatus]||'想去'));
+  save();renderTravel();
+}
+function editTravel(i){
+  ensure();
+  var t=data.travel[i];
+  var p=prompt('目的地：',t.place);if(p===null)return;t.place=p.trim();
+  var d=prompt('出行周期：',t.date||'');if(d!==null)t.date=d.trim();
+  var comp=prompt('同行人：',t.companions||'');if(comp!==null)t.companions=comp.trim();
+  var album=prompt('相册存放位置：',t.album||'');if(album!==null)t.album=album.trim();
+  var n=prompt('备注：',t.note||'');if(n!==null)t.note=n.trim();
+  var ref=prompt('旅行感想：',t.reflection||'');if(ref!==null)t.reflection=ref.trim();
+  addHistory('travel','编辑旅行',t.place);
+  save();renderTravel();
+}
+function delTravel(i){
+  ensure();
+  var t=data.travel[i];
+  if(confirm('删除「'+t.place+'」吗？')){data.travel.splice(i,1);addHistory('travel','删除旅行',t.place);save();renderTravel();}
+}
+function clearTravel(){if(confirm('清空所有旅行记录吗？')){data.travel=[];addHistory('travel','清空旅行','所有旅行记录已清空');save();renderTravel();}}
+function renderTravel(){
+  var el=document.getElementById('travelList');
+  if(!el)return;
+  el.innerHTML='';
+  ensure();
+  var filtered=data.travel.filter(function(t){return travelFilter==='all'||t.status===travelFilter;});
+  document.getElementById('travelWant').textContent=data.travel.filter(function(t){return t.status==='want';}).length;
+  document.getElementById('travelPlan').textContent=data.travel.filter(function(t){return t.status==='plan';}).length;
+  document.getElementById('travelDone').textContent=data.travel.filter(function(t){return t.status==='done';}).length;
+  document.getElementById('travelAgain').textContent=data.travel.filter(function(t){return t.status==='again';}).length;
+  if(filtered.length===0){el.innerHTML='<div class="empty">还没有旅行记录，添加一个想去的地方吧～</div>';return;}
+  filtered.forEach(function(t,i){
+    var realIdx=data.travel.indexOf(t);
+    var statusText={want:'想去',plan:'规划中',done:'已去',again:'还想去'}[t.status];
+    var div=document.createElement('div');
+    div.className='travel-card';
+    var guideHtml='';
+    if(t.guide){
+      guideHtml='<div class="guide-content">'+
+        '<h4>🧭 已绑定攻略</h4>'+
+        (t.guide.routes?'<div class="guide-item"><div class="gi-title">📍 推荐路线</div><div class="gi-content">'+esc(t.guide.routes)+'</div></div>':'')+
+        (t.guide.attractions?'<div class="guide-item"><div class="gi-title">🎯 必游景点</div><div class="gi-content">'+esc(t.guide.attractions)+'</div></div>':'')+
+        (t.guide.food?'<div class="guide-item"><div class="gi-title">🍜 美食推荐</div><div class="gi-content">'+esc(t.guide.food)+'</div></div>':'')+
+        (t.guide.hotel?'<div class="guide-item"><div class="gi-title">🏨 住宿建议</div><div class="gi-content">'+esc(t.guide.hotel)+'</div></div>':'')+
+        (t.guide.tips?'<div class="guide-item"><div class="gi-title">⚠️ 避坑提示</div><div class="gi-content">'+esc(t.guide.tips)+'</div></div>':'')+
+        '</div>';
+    }
+    div.innerHTML='<div class="top"><div><div class="place">'+esc(t.place)+'</div>'+
+      (t.date?'<div class="date">📅 '+esc(t.date)+'</div>':'')+
+      '</div><div class="tag '+t.status+'">'+statusText+'</div></div>'+
+      (t.companions?'<div class="companions"><span>👥 '+esc(t.companions)+'</span></div>':'')+
+      (t.note?'<div class="note">'+esc(t.note)+'</div>':'')+
+      (t.reflection?'<div class="reflection">💭 '+esc(t.reflection)+'</div>':'')+
+      (t.album?'<div class="album-info">📷 相册：'+esc(t.album)+'</div>':'')+
+      (t.guide?'<div class="guide-badge">🧭 已绑定攻略</div>':'')+
+      guideHtml+
+      '<div class="actions">'+
+      '<button class="btn-small btn-edit" onclick="changeTravelStatus('+realIdx+',\'want\')">想去</button>'+
+      '<button class="btn-small btn-edit" onclick="changeTravelStatus('+realIdx+',\'plan\')">规划中</button>'+
+      '<button class="btn-small btn-edit" onclick="changeTravelStatus('+realIdx+',\'done\')">已去</button>'+
+      '<button class="btn-small btn-edit" onclick="changeTravelStatus('+realIdx+',\'again\')">还想去</button>'+
+      '<button class="btn-small btn-edit" onclick="editTravel('+realIdx+')">编辑</button>'+
+      '<button class="btn-small btn-del" onclick="delTravel('+realIdx+')">删</button>'+
+      '</div>';
+    el.appendChild(div);
+  });
+}
+function renderTravelInspiration(){
+  var el=document.getElementById('travelInspiration');
+  if(!el)return;
+  el.innerHTML='';
+  travelInspiration.forEach(function(item,i){
+    var div=document.createElement('div');
+    div.className='insp-card';
+    div.innerHTML='<div class="insp-icon">'+item.icon+'</div>'+
+      '<div class="insp-info"><div class="insp-title">'+esc(item.place)+'</div>'+
+      '<div class="insp-tags">'+item.tags.map(function(tag){return '<span>'+esc(tag)+'</span>';}).join('')+'</div>'+
+      '<div class="insp-desc">'+esc(item.desc)+'</div></div>'+
+      '<button class="btn-insp-add" onclick="addInspiration('+i+')">+</button>';
+    el.appendChild(div);
+  });
+}
+
+
+/* ========== 智能目的地推荐 ========== */
+var destRecommend={
+  '海岛':['福建平潭|蓝眼泪海岛·骑行追泪','海南三亚|热带海滨·潜水日落','山东青岛|红瓦绿树·啤酒海鲜','广西涠洲岛|火山岛屿·慢生活'],
+  '古城':['云南大理|苍山洱海·白族古城','日本京都|千年古都·红叶美食','山西平遥|明清票号·晋商文化','湖南凤凰|吊脚楼·沱江夜色'],
+  '自然':['贵州荔波|地球绿宝石·山水苗寨','四川九寨沟|童话世界·彩林海子','新疆喀纳斯|神的后花园·秋色','安徽黄山|奇松云海·徽派古村'],
+  '美食':['广东顺德|世界美食之都·寻味','四川成都|火锅串串·慢生活','陕西西安|碳水之都·十三朝古都','台湾台南|夜市小吃·古早味'],
+  '都市':['上海|外滩万国·艺术展览','日本东京|涩谷原宿·动漫潮流','新加坡|花园城市·多元美食','中国香港|维港夜景·购物天堂'],
+  '小众':['云南沙溪|茶马古道·静谧古镇','浙江松阳|江南秘境·梯田村落','福建霞浦|滩涂光影·渔排人家','内蒙古阿尔山|火山温泉·林海雪原']
+};
+function recommendDest(){
+  var mood=document.getElementById('recMood').value;
+  var season=document.getElementById('recSeason').value;
+  var el=document.getElementById('recResult');
+  if(!mood){alert('请选择你想去的氛围');return;}
+  var list=destRecommend[mood]||[];
+  var html2='<div class="guide-result"><h4>🔮 为你推荐 · '+(mood||'')+(season?' · '+season+'季':'')+'</h4>';
+  list.forEach(function(item,i){
+    var parts=item.split('|');
+    html2+='<div class="gi"><div class="gi-title">📍 '+parts[0]+'</div><div class="gi-content">'+parts[1]+'</div>'+
+      '<button class="btn-small btn-edit" style="margin-top:6px;" onclick="quickAddTravel(\''+parts[0]+'\',\''+parts[1]+'\')">＋ 加入旅行清单</button></div>';
+  });
+  html2+='</div>';
+  el.innerHTML=html2;
+}
+function quickAddTravel(place,desc){
+  ensure();
+  data.travel.unshift({place:place,date:'',companions:'',album:'',note:desc,reflection:'',status:'want',guide:null,created:new Date().toLocaleString()});
+  addHistory('travel','智能推荐加入',place);
+  save();renderTravel();
+  alert('已加入「'+place+'」到想去清单');
+}
+
+/* ========== 智能旅行攻略辅助 ========== */
+var guideTemplates={
+  '日本京都':{
+    routes:'Day1: 清水寺→三年坂→祇园→花见小路；Day2: 伏见稻荷大社→宇治平等院；Day3: 岚山竹林→天龙寺→渡月桥；Day4: 金阁寺→龙安寺→北野天满宫；Day5: 二条城→京都御所→锦市场',
+    attractions:'清水寺、伏见稻荷大社千本鸟居、岚山竹林、金阁寺、银阁寺、祇园花见小路、鸭川、锦市场',
+    food:'抹茶甜品、汤豆腐、京怀石料理、拉面小路、宇治抹茶、京果子、汤叶料理、抹茶冰激凌',
+    hotel:'预算低住京都站附近；舒适住祇园/河原町；高端选岚山或京怀石旅馆。建议住京都站，交通便利。',
+    tips:'公交比地铁方便，买一日公交券(700日元)；寺庙多需脱鞋穿袜；旺季(红叶/樱花)提前3月订房；多数景点5-6点关门。'
+  },
+  '云南大理':{
+    routes:'Day1: 大理古城→人民路闲逛；Day2: 环洱海骑行(才村→喜洲→海舌公园)；Day3: 苍山索道→寂照庵→崇圣寺三塔；Day4: 双廊古镇→南诏风情岛；Day5: 沙溪古镇一日游',
+    attractions:'洱海、大理古城、苍山、喜洲古镇、双廊、崇圣寺三塔、沙溪古镇、海舌公园',
+    food:'乳扇、饵丝、破酥粑粑、酸辣鱼、烤乳猪、鲜花饼、木瓜鸡、白族三道茶',
+    hotel:'古城内民宿方便出行；洱海边海景客栈适合度假；双廊适合拍照。建议住古城或才村。',
+    tips:'海拔2000米注意防晒；紫外线强带墨镜；环洱海骑行注意风大；雨季6-9月带伞；尊重白族风俗。'
+  },
+  '福建平潭':{
+    routes:'Day1: 龙凤头沙滩→海坛古城；Day2: 北港村→最美环岛路→长江澳风车田；Day3: 塘屿岛蓝眼泪追泪；Day4: 石牌洋→仙人井；Day5: 海坛湾→坛南湾',
+    attractions:'龙凤头沙滩、北港村、长江澳风车田、石牌洋、仙人井、坛南湾、海坛古城',
+    food:'海蛎煎、鱼丸、时来运转、紫菜煲、沙茶面、海鲜大排档、平潭紫菜',
+    hotel:'县城酒店出行方便；北港村民宿有特色；海边露营看蓝眼泪需注意安全。建议住县城或北港村。',
+    tips:'4-8月看蓝眼泪最佳，夜晚去；海风大带外套；防晒必备；骑行环岛注意安全；海鲜过敏备药。'
+  },
+  'default':{
+    routes:'Day1: 抵达→市区逛逛→当地特色美食；Day2: 核心景点游览(上午主要景点+下午周边探索)；Day3: 深度体验/小众景点→当地市场/夜市；Day4: 自然景观/周边一日游；Day5: 购物伴手礼→返程',
+    attractions:'建议查看当地旅游局官网、小红书攻略、马蜂窝游记，根据个人兴趣选择2-3个核心景点+1-2个小众景点',
+    food:'到了当地一定要尝：1)当地早餐 2)街头小吃 3)特色正餐 4)甜点饮品。建议大众点评/小红书搜索"当地美食必吃"',
+    hotel:'经济型选连锁酒店(如家/汉庭)；舒适型选中端品牌(全季/亚朵)；高端选当地特色酒店或民宿。建议住市中心或景区附近，交通便利。',
+    tips:'1)提前查天气备好衣物 2)贵重物品随身携带 3)尊重当地风俗习惯 4)提前下载离线地图 5)备好充电宝和现金 6)与同伴约定集合地点 7)记录当地紧急电话'
+  }
+};
+
+function generateGuide(){
+  ensure();
+  var dest=document.getElementById('guideDest').value.trim();
+  var days=document.getElementById('guideDays').value;
+  var budget=document.getElementById('guideBudget').value;
+  var comp=document.getElementById('guideCompanions').value;
+  if(!dest){alert('请输入目的地');return;}
+  
+  var tpl=guideTemplates[dest]||guideTemplates['default'];
+  var budgetText={low:'经济型',mid:'舒适型',high:'高端型'}[budget]||'灵活';
+  var compText={solo:'独自',couple:'情侣',friends:'朋友',family:'家庭'}[comp]||'灵活';
+  
+  var guide={
+    dest:dest,days:days,budget:budgetText,companions:compText,
+    routes:tpl.routes,
+    attractions:tpl.attractions,
+    food:tpl.food,
+    hotel:tpl.hotel,
+    tips:tpl.tips
+  };
+  
+  // Adjust hotel based on budget
+  if(budget==='low'){
+    guide.hotel='经济型建议：连锁酒店/青年旅舍/民宿单间。' + (tpl.hotel||'');
+  }else if(budget==='high'){
+    guide.hotel='高端型建议：当地五星酒店/精品民宿/特色度假村。' + (tpl.hotel||'');
+  }
+  
+  // Adjust tips based on companions
+  if(comp==='solo'){
+    guide.tips='独自出行提示：注意人身安全，与家人保持联系，不夜间独自前往偏僻地区。' + (tpl.tips||'');
+  }else if(comp==='family'){
+    guide.tips='家庭出行提示：带好常备药品，注意老人小孩体力，行程不宜过紧。' + (tpl.tips||'');
+  }
+  
+  var el=document.getElementById('guideResult');
+  el.innerHTML='<div class="guide-result">'+
+    '<h4>🧭 '+esc(dest)+' · '+(days?days+'天 ':'')+budgetText+' · '+compText+'</h4>'+
+    '<div class="gi"><div class="gi-title">📍 推荐路线</div><div class="gi-content">'+esc(guide.routes)+'</div></div>'+
+    '<div class="gi"><div class="gi-title">🎯 必游景点</div><div class="gi-content">'+esc(guide.attractions)+'</div></div>'+
+    '<div class="gi"><div class="gi-title">🍜 美食推荐</div><div class="gi-content">'+esc(guide.food)+'</div></div>'+
+    '<div class="gi"><div class="gi-title">🏨 住宿建议</div><div class="gi-content">'+esc(guide.hotel)+'</div></div>'+
+    '<div class="gi"><div class="gi-title">⚠️ 避坑提示</div><div class="gi-content">'+esc(guide.tips)+'</div></div>'+
+    '<div style="margin-top:10px;display:flex;gap:8px;">'+
+    '<button class="btn-green" onclick="saveGuideToTravel()">💾 保存到旅行条目</button>'+
+    '<button class="btn-small btn-edit" onclick="closeGuide()">关闭</button>'+
+    '</div>'+
+    '</div>';
+  
+  window._currentGuide=guide;
+}
+
+function closeGuide(){
+  document.getElementById('guideResult').innerHTML='';
+  window._currentGuide=null;
+}
+
+function saveGuideToTravel(){
+  ensure();
+  var guide=window._currentGuide;
+  if(!guide){alert('攻略数据丢失，请重新生成');return;}
+  /* 查找所有旅行条目，让用户选择绑定目标 */
+  if(data.travel.length===0){
+    /* 没有任何旅行条目，直接新建 */
+    data.travel.unshift({place:guide.dest,date:'',companions:guide.companions||'',album:'',note:'由攻略辅助生成',reflection:'',status:'plan',guide:guide,created:new Date().toLocaleString()});
+    addHistory('travel','新建旅行+绑定攻略',guide.dest);
+    save();renderTravel();
+    closeGuide();
+    alert('已新建「'+guide.dest+'」并绑定攻略');
+    return;
+  }
+  /* 有旅行条目，列出所有让用户选择 */
+  var msg='请选择要绑定攻略的旅行条目：\n\n';
+  msg+='0. 新建「'+guide.dest+'」条目\n';
+  data.travel.forEach(function(t,i){msg+=(i+1)+'. '+t.place+' · '+(t.date||'无日期')+' · '+({want:'想去',plan:'规划中',done:'已去',again:'还想去'}[t.status]||'')+'\n';});
+  msg+='\n输入序号：';
+  var pick=parseInt(prompt(msg)||'0');
+  if(isNaN(pick)||pick<0)return;
+  if(pick===0){
+    /* 新建 */
+    data.travel.unshift({place:guide.dest,date:'',companions:guide.companions||'',album:'',note:'由攻略辅助生成',reflection:'',status:'plan',guide:guide,created:new Date().toLocaleString()});
+    addHistory('travel','新建旅行+绑定攻略',guide.dest);
+    save();renderTravel();
+    closeGuide();
+    alert('已新建「'+guide.dest+'」并绑定攻略');
+  }else if(pick<=data.travel.length){
+    /* 绑定到已有条目 */
+    var idx=pick-1;
+    data.travel[idx].guide=guide;
+    addHistory('travel','绑定攻略',data.travel[idx].place);
+    save();renderTravel();
+    closeGuide();
+    alert('攻略已绑定到「'+data.travel[idx].place+'」');
+  }
+}
+
+/* ========== 设置面板 ========== */
+function openSettings(){
+  var panel=document.getElementById('settingsPanel');
+  if(panel){panel.style.display='flex';updateThemeUI();return;}
+  panel=document.createElement('div');
+  panel.id='settingsPanel';
+  panel.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;';
+  panel.innerHTML='<div style="background:#fff;border-radius:20px;max-width:360px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.2);max-height:80vh;overflow-y:auto;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><h3 style="margin:0;font-size:18px;color:var(--text);">⚙️ 设置</h3><button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light);">✕</button></div>'+
+    '<div style="display:flex;flex-direction:column;gap:14px;">'+
+    '<div><div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">🎨 主题颜色</div><div id="themeOptions" style="display:flex;flex-wrap:wrap;gap:10px;"></div></div>'+
+    '<div style="background:var(--accent-soft);padding:12px;border-radius:12px;font-size:13px;color:var(--text-light);line-height:1.6;">💡 长按左侧栏目按钮可拖拽排序</div>'+
+    '<button onclick="exportData()" style="text-align:left;padding:14px;border-radius:12px;border:2px solid var(--accent);background:var(--accent-soft);cursor:pointer;font-size:14px;font-weight:700;color:var(--accent);">📦 导出完整备份包（含全部记录）</button>'+
+    '<button onclick="importData()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #e5ddd6;background:#fbfbfb;cursor:pointer;font-size:14px;color:var(--text);">📥 导入恢复数据</button>'+
+    '<div style="border:1px solid #e5ddd6;border-radius:12px;padding:14px;">'+
+    '<div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text);">☁️ 云端同步（多端同步）</div>'+
+    '<div style="font-size:12px;color:var(--text-light);margin-bottom:8px;line-height:1.5;">在 Supabase 免费创建项目并建表后填入，即可手机电脑同步数据。详见部署文档。</div>'+
+    '<input id="cloudUrl" placeholder="Supabase URL，如 https://xxxx.supabase.co" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">'+
+    '<input id="cloudKey" placeholder="Anon Key（公开公钥）" style="width:100%;margin-bottom:6px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">'+
+    '<input id="cloudUserId" placeholder="同步ID（自定义，如 yiheye-2026）" style="width:100%;margin-bottom:8px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">'+
+    '<label style="font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:8px;color:var(--text);"><input type="checkbox" id="cloudAuto"> 自动同步（每次改动后上传）</label>'+
+    '<div style="display:flex;gap:6px;">'+
+      '<button onclick="cloudSaveConfig()" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;">保存配置</button>'+
+      '<button onclick="cloudUpload(false)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);font-size:12px;cursor:pointer;">⬆️ 上传</button>'+
+      '<button onclick="cloudDownload()" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5ddd6;background:#fbfbfb;color:var(--text);font-size:12px;cursor:pointer;">⬇️ 拉取</button>'+
+    '</div></div>'+
+    '<button onclick="clearAllData()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #e5ddd6;background:#fff3d6;color:#d49b26;cursor:pointer;font-size:14px;font-weight:700;">🗑️ 清空所有数据</button>'+
+    '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">一禾叶 · 工作台 v3.0（含云同步）</div>'+
+    '</div></div>';
+  document.body.appendChild(panel);
+  if(settings.cloud){
+    var cu=document.getElementById('cloudUrl');if(cu)cu.value=settings.cloud.url||'';
+    var ck=document.getElementById('cloudKey');if(ck)ck.value=settings.cloud.key||'';
+    var cid=document.getElementById('cloudUserId');if(cid)cid.value=settings.cloud.userId||'';
+    var ca=document.getElementById('cloudAuto');if(ca)ca.checked=!!settings.cloud.auto;
+  }
+  updateThemeUI();
+}
+function closeSettings(){var p=document.getElementById('settingsPanel');if(p)p.style.display='none';}
+function updateThemeUI(){
+  var box=document.getElementById('themeOptions');if(!box)return;
+  box.innerHTML='';
+  for(var k in themes){
+    var t=themes[k];
+    var div=document.createElement('div');
+    div.style.cssText='cursor:pointer;border-radius:12px;padding:10px 12px;border:2px solid '+(settings.theme===k?t.accent:'transparent')+';background:'+t.accentSoft+';color:'+t.text+';font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;';
+    div.innerHTML='<span style="width:16px;height:16px;border-radius:50%;background:'+t.accent+';"></span>'+t.name;
+    div.onclick=function(key){return function(){applyTheme(key);updateThemeUI();};}(k);
+    box.appendChild(div);
+  }
+}
+function exportData(){
+  var stamp=new Date();
+  var pad=function(n){return String(n).padStart(2,'0');};
+  var ts=stamp.getFullYear()+pad(stamp.getMonth()+1)+pad(stamp.getDate())+'-'+pad(stamp.getHours())+pad(stamp.getMinutes());
+  var moduleList=['每日计划','心情记录','读书记录','观影记录','运动锻炼','存钱计划','时事政治','历史记录','旅游日记','树洞'];
+  /* 统计各模块记录条数，写入备份便于核对 */
+  var counts={
+    每日计划:(data.todo?data.todo.length:0)+(data.done?data.done.length:0),
+    心情记录:data.moods?data.moods.length:0,
+    读书记录:(data.booksReading?data.booksReading.length:0)+(data.booksFinished?data.booksFinished.length:0)+(data.booksWishlist?data.booksWishlist.length:0),
+    观影记录:(data.moviesWatched?data.moviesWatched.length:0)+(data.moviesWishlist?data.moviesWishlist.length:0),
+    运动锻炼:data.sport?data.sport.length:0,
+    存钱计划:data.saving?data.saving.length:0,
+    时事政治:data.news?data.news.length:0,
+    历史记录:data.history?data.history.length:0,
+    旅游日记:data.travel?data.travel.length:0,
+    树洞:data.treeholes?data.treeholes.length:0
+  };
+  var all={
+    app:'一禾叶工作台',
+    version:'3.0',
+    exportTime:stamp.toLocaleString(),
+    modules:moduleList,
+    recordCounts:counts,
+    data:data,
+    settings:settings
+  };
+  var blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='一禾叶工作台-完整备份-'+ts+'.json';a.click();URL.revokeObjectURL(url);
+  addHistory('setting','导出数据','备份了所有数据');
+  alert('✅ 完整备份已生成\n包含全部板块布局、主题、导航顺序及所有历史记录。\n文件已保存到手机「下载」目录，可在设置中导入恢复。');
+}
+function importData(){
+  var input=document.createElement('input');input.type='file';input.accept='.json';
+  input.onchange=function(e){
+    var file=e.target.files[0];if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var obj=JSON.parse(ev.target.result);
+        if(obj.data){data=obj.data;save();}
+        if(obj.settings){settings=obj.settings;saveSettings();applyTheme(settings.theme||'pink');renderNav();}
+        renderAll();alert('数据恢复成功');addHistory('setting','导入数据','恢复备份');
+      }
+      catch(err){alert('文件格式错误');}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+function clearAllData(){if(confirm('确定清空所有数据吗？此操作不可恢复！')){localStorage.removeItem('yiheyeData');localStorage.removeItem('yiheyeSettings');location.reload();}}
+
+/* ========== 初始化 ========== */
+applyTheme(settings.theme);
+renderNav();
+initNavDrag();
+renderVideos('courseMain',ouyangVideos);
+renderVideos('courseOther',otherVideos);
+renderTravelInspiration();
+renderAll();
+</script>
+</body>
+</html>
