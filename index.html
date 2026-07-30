@@ -823,21 +823,66 @@ function cloudUpload(quiet){
   }).then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)setCloudStatus('✅ 已上传到云端（同步ID：'+settings.cloud.userId+'）');})
   .catch(function(e){clearTimeout(timer);if(!quiet)setCloudStatus('上传失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message)+'（检查 URL/Key/网络）',true);});
 }
+/* ========== 合并同步（不覆盖，合并两边数据） ========== */
+function itemKey(section,it){
+  if(it&&it._id) return '_id:'+it._id;
+  function t(s){return (s==null?'':String(s)).trim().toLowerCase();}
+  switch(section){
+    case 'todo': case 'done': return 't:'+t(it.text);
+    case 'moods': return 'm:'+t(it.note)+'|'+t(it.mood);
+    case 'booksReading': case 'booksFinished': case 'booksWishlist': return 'b:'+t(it.title);
+    case 'moviesWatched': case 'moviesWishlist': return 'v:'+t(it.name);
+    case 'sport': return 's:'+t(it.text)+'|'+t(it.note);
+    case 'saving': return '$:'+(it.amount||'')+'|'+t(it.date);
+    case 'news': return 'n:'+t(it.title);
+    case 'treeholes': return 'h:'+t(it.text);
+    case 'travel': return 'w:'+t(it.place);
+    default: return 'x:'+t(it.text||it.title||it.name||it.place);
+  }
+}
+function itemTs(it){return (it&&(it.mtime||it.date||it.created))||'';}
+function mergeSection(localArr,cloudArr,section){
+  var map={};
+  function put(it){if(!it)return;var k=itemKey(section,it);var ex=map[k];if(!ex||itemTs(it)>itemTs(ex))map[k]=it;}
+  (localArr||[]).forEach(put);
+  (cloudArr||[]).forEach(put);
+  var merged=[];var seen={};
+  (localArr||[]).forEach(function(it){if(!it)return;var k=itemKey(section,it);if(seen[k])return;seen[k]=true;merged.push(map[k]);});
+  (cloudArr||[]).forEach(function(it){if(!it)return;var k=itemKey(section,it);if(seen[k])return;seen[k]=true;merged.push(map[k]);});
+  return merged;
+}
+function mergeHistory(localH,cloudH){
+  function keyOf(r){return (r.date||'')+'|'+(r.time||'')+'|'+r.type+'|'+(r.title||'')+'|'+r.detail;}
+  function tsOf(r){return r.ts?r.ts:0;}
+  var map={};
+  (localH||[]).forEach(function(r){if(!r)return;var k=keyOf(r);if(!map[k]||tsOf(r)>=tsOf(map[k]))map[k]=r;});
+  (cloudH||[]).forEach(function(r){if(!r)return;var k=keyOf(r);if(!map[k]||tsOf(r)>tsOf(map[k]))map[k]=r;});
+  return Object.values(map).sort(function(a,b){return tsOf(b)-tsOf(a);}).slice(0,500);
+}
 function cloudDownload(){
   if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){setCloudStatus('请先在设置中填写云端配置');return;}
   setCloudStatus('⏳ 拉取中…');
   var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
   var timer=setTimeout(function(){if(ctl)ctl.abort();},20000);
+  var sections=['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel'];
   fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload,updated_at',{headers:cloudHeaders(),signal:ctl?ctl.signal:undefined})
     .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(arr){
-      if(arr&&arr.length>0&&arr[0].payload){
-        data=arr[0].payload;ensure();save();renderAll();
-        var when=arr[0].updated_at?('（云端更新于 '+arr[0].updated_at+'）'):'';
-        setCloudStatus('✅ 已从云端拉取并覆盖本地 '+when);
-      }else{
-        setCloudStatus('云端暂无该同步ID（'+settings.cloud.userId+'）的数据，请先在另一台设备点“上传”',true);
-      }
+      if(!arr||arr.length===0||!arr[0].payload){setCloudStatus('云端暂无该同步ID（'+settings.cloud.userId+'）的数据，请先在另一台设备点“上传”',true);return;}
+      var cd=arr[0].payload;
+      var added=0;
+      sections.forEach(function(s){
+        if(Array.isArray(cd[s])){
+          var before=(data[s]||[]).length;
+          data[s]=mergeSection(data[s],cd[s],s);
+          var after=data[s].length;
+          if(after>before)added+=(after-before);
+        }
+      });
+      if(Array.isArray(cd.history)){data.history=mergeHistory(data.history,cd.history);}
+      ensure();save();renderAll();
+      var when=arr[0].updated_at?('（云端更新于 '+arr[0].updated_at+'）'):'';
+      setCloudStatus('✅ 已合并云端与本地数据 '+when+'（新增 '+added+' 条，两边独有都保留）');
     })
     .catch(function(e){clearTimeout(timer);setCloudStatus('拉取失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message),true);});
 }
@@ -2177,6 +2222,13 @@ renderVideos('courseMain',ouyangVideos);
 renderVideos('courseOther',otherVideos);
 renderTravelInspiration();
 renderAll();
+
+/* Service Worker 注册：自动更新缓存，以后改完代码手机不用重装PWA */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(function(reg){
+    setTimeout(function(){reg.update();},3000);
+  }).catch(function(){});
+}
 </script>
 </body>
 </html>
