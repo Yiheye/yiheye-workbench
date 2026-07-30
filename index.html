@@ -298,6 +298,10 @@
         <div class="card-title">✅ 今日已完成</div>
         <div class="task-list" id="doneList"></div>
       </div>
+      <div class="card" id="historyDoneCard" style="display:none;">
+        <div class="card-title">📅 历史已完成（<span id="historyDoneCount">0</span> 项）</div>
+        <div class="task-list" id="historyDoneList"></div>
+      </div>
     </section>
 
     <section id="mood" class="section">
@@ -901,11 +905,14 @@ function renderAll(){
   var wk=['周日','周一','周二','周三','周四','周五','周六'];
   document.getElementById('todaySub').textContent=wk[now.getDay()]+' | '+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
   document.getElementById('dailyQuote').textContent=quotes[now.getDate()%quotes.length];
-  document.getElementById('doneCount').textContent=data.done.length;
+  var today=todayStr();
+  var todayDone=data.done.filter(function(it){return it.date===today;});
+  document.getElementById('doneCount').textContent=todayDone.length;
   document.getElementById('todoCount').textContent=data.todo.length;
 
   renderTasks('todoList',data.todo,'todo');
-  renderTasks('doneList',data.done,'done');
+  renderTasks('doneList',todayDone,'done');
+  renderHistoryDone();
   renderMood();
   renderTreehole();
   renderBooksReading();
@@ -924,6 +931,22 @@ function renderAll(){
   renderTravelInspiration();
 }
 
+function todayStr(){
+  var n=new Date();
+  return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+}
+function taskItemHtml(item,key,i,opts){
+  opts=opts||{};
+  var check=opts.noToggle
+    ? '<div class="task-check checked" style="cursor:default;">✓</div>'
+    : '<div class="task-check '+(item.done?'checked':'')+'" onclick="toggleTask(\''+key+'\','+i+')">'+(item.done?'✓':'')+'</div>';
+  return check+
+    '<div class="task-content"><div class="task-text">'+esc(item.text)+'</div>'+
+    (item.time?'<div class="task-meta">⏰ '+item.time+'</div>':'')+
+    (item.note?'<div class="task-meta">'+esc(item.note)+'</div>':'')+'</div>'+
+    '<button class="btn-small btn-edit" onclick="editTask(\''+key+'\','+i+')">编辑</button>'+
+    '<button class="btn-small btn-del" onclick="delTask(\''+key+'\','+i+')">删</button>';
+}
 function renderTasks(elId,list,key){
   var el=document.getElementById(elId);
   if(!el)return;
@@ -932,13 +955,43 @@ function renderTasks(elId,list,key){
   list.forEach(function(item,i){
     var div=document.createElement('div');
     div.className='task-item'+(item.done?' done':'');
-    div.innerHTML='<div class="task-check '+(item.done?'checked':'')+'" onclick="toggleTask(\''+key+'\','+i+')">'+(item.done?'✓':'')+'</div>'+
-      '<div class="task-content"><div class="task-text">'+esc(item.text)+'</div>'+
-      (item.time?'<div class="task-meta">⏰ '+item.time+'</div>':'')+
-      (item.note?'<div class="task-meta">'+esc(item.note)+'</div>':'')+'</div>'+
-      '<button class="btn-small btn-edit" onclick="editTask(\''+key+'\','+i+')">编辑</button>'+
-      '<button class="btn-small btn-del" onclick="delTask(\''+key+'\','+i+')">删</button>';
+    div.innerHTML=taskItemHtml(item,key,i);
     el.appendChild(div);
+  });
+}
+function renderHistoryDone(){
+  var card=document.getElementById('historyDoneCard');
+  var listEl=document.getElementById('historyDoneList');
+  if(!card||!listEl)return;
+  var today=todayStr();
+  var oldItems=data.done.filter(function(it){return !it.date || it.date!==today;});
+  if(oldItems.length===0){card.style.display='none';listEl.innerHTML='';return;}
+  card.style.display='';
+  document.getElementById('historyDoneCount').textContent=oldItems.length;
+  var groups={};
+  oldItems.forEach(function(it){
+    var k=it.date||'未知日期';
+    if(!groups[k])groups[k]=[];
+    groups[k].push(it);
+  });
+  var dates=Object.keys(groups).sort(function(a,b){
+    if(a==='未知日期')return 1;
+    if(b==='未知日期')return -1;
+    return b.localeCompare(a);
+  });
+  listEl.innerHTML='';
+  dates.forEach(function(date){
+    var hdr=document.createElement('div');
+    hdr.style.cssText='font-size:12px;color:var(--text-light);margin:10px 0 4px;font-weight:600;';
+    hdr.textContent='📅 '+date;
+    listEl.appendChild(hdr);
+    groups[date].forEach(function(item){
+      var realIdx=data.done.indexOf(item);
+      var div=document.createElement('div');
+      div.className='task-item done';
+      div.innerHTML=taskItemHtml(item,'done',realIdx,{noToggle:true});
+      listEl.appendChild(div);
+    });
   });
 }
 
@@ -948,7 +1001,7 @@ function addTask(key){
   var text=prompt('任务内容：');
   if(!text)return;
   var item={text:text.trim(),done:false};
-  if(key==='todo'||key==='done'){var time=prompt('时间（如 09:00，可选）：');if(time)item.time=time;addHistory('task',key==='done'?'添加已完成事项':'添加待办',item.text+(item.time?' · '+item.time:''));}
+  if(key==='todo'||key==='done'){var time=prompt('时间（如 09:00，可选）：');if(time)item.time=time;if(key==='done')item.date=todayStr();addHistory('task',key==='done'?'添加已完成事项':'添加待办',item.text+(item.time?' · '+item.time:''));}
   if(key==='movie'){var n=prompt('类型/备注：');if(n)item.note=n;addHistory('movie','新增影片',item.text+(item.note?' · '+item.note:''));}
   if(key==='sport'){addHistory('sport','添加运动计划',item.text);}
   data[key].push(item);save();renderAll();
@@ -972,7 +1025,7 @@ function toggleTask(key,i){
   ensure();
   var it=data[key][i];
   it.done=!it.done;
-  if(key==='todo'&&it.done){data.todo.splice(i,1);data.done.push(it);addHistory('task','完成任务',it.text+(it.time?' · '+it.time:''));}
+  if(key==='todo'&&it.done){it.date=todayStr();data.todo.splice(i,1);data.done.push(it);addHistory('task','完成任务',it.text+(it.time?' · '+it.time:''));}
   else if(key==='done'&&!it.done){data.done.splice(i,1);data.todo.push(it);addHistory('task','取消完成',it.text+(it.time?' · '+it.time:''));}
   save();renderAll();
 }
