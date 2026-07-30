@@ -811,19 +811,25 @@ function setCloudStatus(msg,isErr){
 }
 function cloudUpload(quiet){
   if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){if(!quiet)setCloudStatus('请先在设置中填写云端配置（URL / Key / 同步ID）');return;}
+  if(!quiet)setCloudStatus('⏳ 上传中…');
+  var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  var timer=setTimeout(function(){if(ctl)ctl.abort();},20000);
   var payload={user_id:settings.cloud.userId,payload:data,updated_at:new Date().toISOString()};
   fetch(cloudApiBase()+'?on_conflict=user_id',{
     method:'POST',
     headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
-    body:JSON.stringify(payload)
-  }).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)setCloudStatus('✅ 已上传到云端（同步ID：'+settings.cloud.userId+'）');})
-  .catch(function(e){if(!quiet)setCloudStatus('上传失败：'+e.message+'（检查 URL/Key/网络）',true);});
+    body:JSON.stringify(payload),
+    signal:ctl?ctl.signal:undefined
+  }).then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)setCloudStatus('✅ 已上传到云端（同步ID：'+settings.cloud.userId+'）');})
+  .catch(function(e){clearTimeout(timer);if(!quiet)setCloudStatus('上传失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message)+'（检查 URL/Key/网络）',true);});
 }
 function cloudDownload(){
   if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){setCloudStatus('请先在设置中填写云端配置');return;}
-  setCloudStatus('拉取中…');
-  fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload,updated_at',{headers:cloudHeaders()})
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  setCloudStatus('⏳ 拉取中…');
+  var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  var timer=setTimeout(function(){if(ctl)ctl.abort();},20000);
+  fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload,updated_at',{headers:cloudHeaders(),signal:ctl?ctl.signal:undefined})
+    .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(arr){
       if(arr&&arr.length>0&&arr[0].payload){
         data=arr[0].payload;ensure();save();renderAll();
@@ -833,7 +839,7 @@ function cloudDownload(){
         setCloudStatus('云端暂无该同步ID（'+settings.cloud.userId+'）的数据，请先在另一台设备点“上传”',true);
       }
     })
-    .catch(function(e){setCloudStatus('拉取失败：'+e.message,true);});
+    .catch(function(e){clearTimeout(timer);setCloudStatus('拉取失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message),true);});
 }
 function cloudSaveConfig(){
   settings.cloud.url=(document.getElementById('cloudUrl').value||'').trim();
