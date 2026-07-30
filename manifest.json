@@ -2,7 +2,7 @@
   "name": "一禾叶的工作台",
   "short_name": "一禾叶",
   "description": "一禾叶的个人工作台 - 每日计划、心情记录、读书观影、运动锻炼、存钱计划、时事政治、旅游日记、树洞",
-  "start_url": "./yiheye-workbench.html",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f6efe8",
