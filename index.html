@@ -886,6 +886,15 @@ function cloudDownload(){
     })
     .catch(function(e){clearTimeout(timer);setCloudStatus('拉取失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message),true);});
 }
+/* ========== 心跳保活：向云端发极简请求，维持 Supabase 免费项目活跃，避免被自动暂停 ========== */
+function cloudHeartbeat(){
+  if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId) return;
+  var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  var timer=setTimeout(function(){if(ctl)ctl.abort();},15000);
+  fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=user_id',{headers:cloudHeaders(),signal:ctl?ctl.signal:undefined})
+    .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);/* 静默：仅用于维持项目活跃度 */})
+    .catch(function(e){clearTimeout(timer);/* 静默失败：不影响正常使用 */});
+}
 function cloudSaveConfig(){
   settings.cloud.url=(document.getElementById('cloudUrl').value||'').trim();
   settings.cloud.key=(document.getElementById('cloudKey').value||'').trim();
@@ -2222,6 +2231,13 @@ renderVideos('courseMain',ouyangVideos);
 renderVideos('courseOther',otherVideos);
 renderTravelInspiration();
 renderAll();
+
+/* 心跳保活：App 每次打开或切回前台时，向云端发一个极简请求维持项目活跃（已配置云端才触发） */
+cloudHeartbeat();
+var _hbLast=0;
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'){var now=Date.now();if(now-_hbLast>60000){_hbLast=now;cloudHeartbeat();}}
+});
 
 /* Service Worker 注册：自动更新缓存，以后改完代码手机不用重装PWA */
 if('serviceWorker' in navigator){
