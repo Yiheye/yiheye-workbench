@@ -460,7 +460,7 @@
         <div class="card-title" style="justify-content:space-between;"><span>✍️ 录入学习记录</span><span style="font-size:12px;color:var(--text-light);">点击上方日历可改日期补录</span></div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
           <input type="date" id="studyDate" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
-          <select id="studySubject" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
+          <select id="studySubject" onchange="onStudySubjectChange()" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
             <option value="行测">行测</option>
             <option value="申论">申论</option>
             <option value="政治理论常识">政治理论常识</option>
@@ -780,6 +780,7 @@ var def={
   moods:[],
   treeholes:[],
   study:[],
+  studyCustom:[],
   history:[],
   travel:[],
   booksReading:[],
@@ -1655,15 +1656,15 @@ function renderSaving(){
   data.saving.forEach(function(x){total+=(x.amount||0);});
   document.getElementById('savedTotal').textContent='¥'+total;
   document.getElementById('saveCount').textContent=data.saving.length;
-  var cats={};
+  var cats={'未分类':0};
+  SAVE_CATS.forEach(function(c){cats[c]=0;});
   data.saving.forEach(function(x){var c=x.category||'未分类';cats[c]=(cats[c]||0)+(x.amount||0);});
   var html='';
   SAVE_CATS.forEach(function(c){
-    if(cats[c]===undefined)return;
     var v=cats[c],pct=total>0?Math.round(v/total*100):0;
     html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(c)+'</span><span style="color:var(--accent);font-weight:700;">¥'+v+' · '+pct+'%</span></div>';
   });
-  if(cats['未分类']){var v=cats['未分类'],pct=total>0?Math.round(v/total*100):0;html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;font-size:13px;"><span style="color:var(--text-light);">未分类</span><span style="color:var(--text-light);">¥'+v+' · '+pct+'%</span></div>';}
+  if(cats['未分类']>0){var v=cats['未分类'],pct=total>0?Math.round(v/total*100):0;html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;font-size:13px;"><span style="color:var(--text-light);">未分类</span><span style="color:var(--text-light);">¥'+v+' · '+pct+'%</span></div>';}
   document.getElementById('savingCats').innerHTML=html;
   var el=document.getElementById('savingList');
   el.innerHTML='';
@@ -1681,6 +1682,29 @@ function delSaving(i){var s=data.saving[i];data.saving.splice(i,1);addHistory('s
 
 /* ========== 学习打卡 ========== */
 var STUDY_SUBJECTS=['行测','申论','政治理论常识','时政'];
+function renderStudySubjects(){
+  var sel=document.getElementById('studySubject');if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='';
+  STUDY_SUBJECTS.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  (data.studyCustom||[]).forEach(function(s){if(!s)return;var o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);});
+  var oc=document.createElement('option');oc.value='__custom__';oc.textContent='➕ 自定义…';sel.appendChild(oc);
+  if(cur&&[].slice.call(sel.options).some(function(o){return o.value===cur;}))sel.value=cur;
+}
+function onStudySubjectChange(){
+  var sel=document.getElementById('studySubject');if(!sel)return;
+  if(sel.value==='__custom__'){
+    var name=prompt('输入自定义学习科目名称：');
+    if(name&&name.trim()){
+      name=name.trim();
+      if(!(data.studyCustom||[]).some(function(c){return c===name;})){data.studyCustom.push(name);save();}
+      renderStudySubjects();
+      sel.value=name;
+    }else{
+      sel.value=STUDY_SUBJECTS[0];
+    }
+  }
+}
 function addStudy(){
   ensure();
   var date=(document.getElementById('studyDate').value||todayStr());
@@ -1747,7 +1771,9 @@ function renderStudyCalendar(){
   var sEl=document.getElementById('studySubjectStat');
   if(sEl){
     var html='';
-    STUDY_SUBJECTS.forEach(function(sub){
+    var order=STUDY_SUBJECTS.slice();
+    data.study.forEach(function(s){if(s.subject&&order.indexOf(s.subject)<0)order.push(s.subject);});
+    order.forEach(function(sub){
       if(subj[sub]===undefined)return;
       var v=subj[sub],pct=total>0?Math.round(v/total*100):0;
       html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(sub)+'</span><span style="color:var(--accent);font-weight:700;">'+v+' 分钟 · '+pct+'%</span></div>';
@@ -2390,6 +2416,7 @@ renderVideos('courseOther',otherVideos);
 renderTravelInspiration();
 renderAll();
 var _sd=document.getElementById('studyDate');if(_sd)_sd.value=todayStr();
+renderStudySubjects();
 
 /* 心跳保活：App 每次打开或切回前台时，向云端发一个极简请求维持项目活跃（已配置云端才触发） */
 cloudHeartbeat();
