@@ -125,6 +125,8 @@
     .cal-day.active{background:#ddeefb;color:#4a90c7;font-weight:700;}
     .cal-day.muted{color:#d0c8c0;}
     .cal-day.has-sport{background:transparent;}
+    .cal-day.has-study .cal-mark{color:var(--accent) !important;}
+    .cal-day.sel{outline:2px solid var(--accent);background:var(--accent-soft);}
     .cal-grid{table-layout:fixed;}
     .course-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px;}
     .course-card{border-radius:18px;overflow:hidden;box-shadow:var(--shadow);background:#fff;cursor:pointer;}
@@ -267,6 +269,7 @@
       <button data-section="movie" draggable="true"><span class="icon">🎬</span>观影记录</button>
       <button data-section="sport" draggable="true"><span class="icon">🧘</span>运动锻炼</button>
       <button data-section="saving" draggable="true"><span class="icon">🏦</span>存钱计划</button>
+      <button data-section="study" draggable="true"><span class="icon">📚</span>学习打卡</button>
       <button data-section="politics" draggable="true"><span class="icon">🏛️</span>时事政治</button>
       <button data-section="history" draggable="true"><span class="icon">🕰️</span>历史记录</button>
       <button data-section="travel" draggable="true"><span class="icon">✈️</span>旅游日记</button>
@@ -407,14 +410,21 @@
         <p>先把工资按比例分到四个账户，剩下的再安心花</p>
       </div>
       <div class="saving-stat">
-        <div class="stat-card g"><div class="big" id="savedTotal">¥0</div><div class="small">已存金额</div></div>
-        <div class="stat-card y"><div class="big" id="savedPercent">0%</div><div class="small">完成进度</div></div>
+        <div class="stat-card g"><div class="big" id="savedTotal">¥0</div><div class="small">存款总额</div></div>
+        <div class="stat-card y"><div class="big" id="saveCount">0</div><div class="small">累计笔数</div></div>
       </div>
-      <div class="progress-bar" style="background:#fff;box-shadow:var(--shadow);padding:0;height:12px;border-radius:10px;overflow:hidden;"><div class="progress-fill" id="saveProgress" style="width:0%;"></div></div>
+      <div id="savingCats" style="background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:16px;"></div>
       <div class="card">
         <div class="card-title">💰 存入一笔</div>
-        <div class="save-action">
-          <input type="number" id="saveAmount" placeholder="存入金额" style="flex:1;min-width:120px;">
+        <div class="save-action" style="flex-wrap:wrap;gap:8px;">
+          <input type="number" id="saveAmount" placeholder="存入金额" style="flex:1;min-width:110px;">
+          <select id="saveCat" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
+            <option value="日常生活">日常生活 60%</option>
+            <option value="强制储蓄" selected>强制储蓄 20%</option>
+            <option value="人情往来">人情往来 10%</option>
+            <option value="应急备用">应急备用 10%</option>
+            <option value="未分类">未分类</option>
+          </select>
           <button class="btn-green" onclick="addSaving()">存入</button>
         </div>
         <div id="savingList" style="margin-top:14px"></div>
@@ -431,6 +441,44 @@
         <div style="background:var(--accent-soft);padding:14px;border-radius:12px;color:var(--accent);font-weight:700;line-height:1.8;">
           工资到账先挪后花，<br>生活费留足再存，<br>专项储蓄看心情，<br>应急备用是底线。
         </div>
+      </div>
+    </section>
+
+    <section id="study" class="section">
+      <h1 class="page-title">学习打卡</h1>
+      <div class="page-sub">考公系统学习 · 行测 / 申论 / 政治理论常识 / 时政</div>
+      <div class="saving-top">
+        <div class="icon">📚</div>
+        <h2>每日学习记录</h2>
+        <p>选择科目、填写内容与时长，点击日历可补录过往日期</p>
+      </div>
+      <div class="calendar">
+        <div class="card-title" style="margin-bottom:6px;"><span id="studyCalMonth"></span></div>
+        <div class="cal-grid" id="studyCalGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>✍️ 录入学习记录</span><span style="font-size:12px;color:var(--text-light);">点击上方日历可改日期补录</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          <input type="date" id="studyDate" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
+          <select id="studySubject" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
+            <option value="行测">行测</option>
+            <option value="申论">申论</option>
+            <option value="政治理论常识">政治理论常识</option>
+            <option value="时政">时政</option>
+          </select>
+          <input type="number" id="studyMinutes" placeholder="时长(分钟)" style="width:110px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">
+          <button class="btn-green" onclick="addStudy()">记录</button>
+        </div>
+        <input type="text" id="studyContent" placeholder="学习内容，如：资料分析速算技巧 / 乡村振兴申论范文" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">
+        <div id="studyList" style="margin-top:14px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 学习统计</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div class="stat-card g" style="flex:1;min-width:120px;"><div class="big" id="studyTotal">0</div><div class="small">累计时长(分钟)</div></div>
+          <div class="stat-card y" style="flex:1;min-width:120px;"><div class="big" id="studyDays">0</div><div class="small">打卡天数</div></div>
+        </div>
+        <div id="studySubjectStat" style="margin-top:12px;"></div>
       </div>
     </section>
 
@@ -731,6 +779,7 @@ var def={
   news:[],
   moods:[],
   treeholes:[],
+  study:[],
   history:[],
   travel:[],
   booksReading:[],
@@ -782,9 +831,15 @@ function ensure(){
     data._movieMigrated=true;
     save();
   }
+  /* 数据迁移：存钱旧记录补分类（适配 6211） */
+  if(data.saving&&data.saving.length){
+    var _sChanged=false;
+    data.saving.forEach(function(s){if(s&&s.category===undefined){s.category='未分类';_sChanged=true;}});
+    if(_sChanged)save();
+  }
   /* 自动补录记录/编辑时间 */
   var _needSave=false;
-  ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel'].forEach(function(k){
+  ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study'].forEach(function(k){
     if(data[k]&&data[k].length){data[k].forEach(function(it){if(it&&typeof it==='object'&&it.mtime===undefined){it.mtime=fmtDateTime();_needSave=true;}});}
   });
   if(_needSave)save();
@@ -792,7 +847,7 @@ function ensure(){
 var _cloudTimer=null;
 function save(){
   try{
-    ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel'].forEach(function(k){
+    ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study'].forEach(function(k){
       if(data[k]&&data[k].length){data[k].forEach(function(it){if(it&&typeof it==='object'&&it.mtime===undefined)it.mtime=fmtDateTime();});}
     });
     localStorage.setItem('yiheyeData',JSON.stringify(data));
@@ -809,6 +864,14 @@ function setCloudStatus(msg,isErr){
   var el=document.getElementById('cloudStatus');
   if(el){el.textContent=msg||'';el.style.color=isErr?'#d9534f':'var(--accent)';}
 }
+function cloudErrMsg(e){
+  if(e&&e.name==='AbortError')return '请求超时(20秒)，请检查手机网络或 Supabase 连通性';
+  var msg=(e&&e.message)||'未知错误';
+  if(/paused|Project is paused|HTTP (403|503|401)|Failed to fetch|NetworkError|Load failed|Forbidden/i.test(msg)){
+    return '云端连接失败（项目可能已被暂停或网络不通）。Supabase 免费版长时间无请求会自动暂停，请到 Supabase 后台把该同步库点「Resume / 恢复」后即可正常同步；同时检查手机网络';
+  }
+  return msg+'（检查 URL / Key / 网络）';
+}
 function cloudUpload(quiet){
   if(!settings.cloud.url||!settings.cloud.key||!settings.cloud.userId){if(!quiet)setCloudStatus('请先在设置中填写云端配置（URL / Key / 同步ID）');return;}
   if(!quiet)setCloudStatus('⏳ 上传中…');
@@ -821,7 +884,7 @@ function cloudUpload(quiet){
     body:JSON.stringify(payload),
     signal:ctl?ctl.signal:undefined
   }).then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);if(!quiet)setCloudStatus('✅ 已上传到云端（同步ID：'+settings.cloud.userId+'）');})
-  .catch(function(e){clearTimeout(timer);if(!quiet)setCloudStatus('上传失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message)+'（检查 URL/Key/网络）',true);});
+  .catch(function(e){clearTimeout(timer);if(!quiet)setCloudStatus('上传失败：'+cloudErrMsg(e),true);});
 }
 /* ========== 合并同步（不覆盖，合并两边数据） ========== */
 function itemKey(section,it){
@@ -833,10 +896,11 @@ function itemKey(section,it){
     case 'booksReading': case 'booksFinished': case 'booksWishlist': return 'b:'+t(it.title);
     case 'moviesWatched': case 'moviesWishlist': return 'v:'+t(it.name);
     case 'sport': return 's:'+t(it.text)+'|'+t(it.note);
-    case 'saving': return '$:'+(it.amount||'')+'|'+t(it.date);
+    case 'saving': return '$:'+t(it.category)+'|'+(it.amount||'')+'|'+t(it.date);
     case 'news': return 'n:'+t(it.title);
     case 'treeholes': return 'h:'+t(it.text);
     case 'travel': return 'w:'+t(it.place);
+    case 'study': return 's:'+t(it.date)+'|'+t(it.subject)+'|'+t(it.content);
     default: return 'x:'+t(it.text||it.title||it.name||it.place);
   }
 }
@@ -864,7 +928,7 @@ function cloudDownload(){
   setCloudStatus('⏳ 拉取中…');
   var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
   var timer=setTimeout(function(){if(ctl)ctl.abort();},20000);
-  var sections=['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel'];
+  var sections=['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study'];
   fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload,updated_at',{headers:cloudHeaders(),signal:ctl?ctl.signal:undefined})
     .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(arr){
@@ -884,7 +948,7 @@ function cloudDownload(){
       var when=arr[0].updated_at?('（云端更新于 '+arr[0].updated_at+'）'):'';
       setCloudStatus('✅ 已合并云端与本地数据 '+when+'（新增 '+added+' 条，两边独有都保留）');
     })
-    .catch(function(e){clearTimeout(timer);setCloudStatus('拉取失败：'+(e.name==='AbortError'?'请求超时(20秒)，请检查手机网络或 Supabase 连通性':e.message),true);});
+    .catch(function(e){clearTimeout(timer);setCloudStatus('拉取失败：'+cloudErrMsg(e),true);});
 }
 /* ========== 心跳保活：向云端发极简请求，维持 Supabase 免费项目活跃，避免被自动暂停 ========== */
 function cloudHeartbeat(){
@@ -1003,6 +1067,8 @@ function renderAll(){
   renderSportRecords();
   renderCalendar();
   renderSaving();
+  renderStudy();
+  renderStudyCalendar();
   renderPol();
   renderNews();
   renderDailyNews();
@@ -1457,6 +1523,7 @@ function renderMoviesWishlist(){
 
 /* ========== 运动 ========== */
 var calCursor=new Date();
+var studyCalCursor=new Date();
 function renderCalendar(){
   var now=new Date();
   if(!calCursor)calCursor=new Date();
@@ -1574,19 +1641,30 @@ function addSaving(){
   ensure();
   var amount=parseFloat(document.getElementById('saveAmount').value);
   if(isNaN(amount)||amount<=0){alert('请输入金额');return;}
-  data.saving.push({amount:amount,date:new Date().toLocaleDateString()});
-  addHistory('saving','存入一笔','¥'+amount.toFixed(2));
+  var cat=document.getElementById('saveCat')?document.getElementById('saveCat').value:'未分类';
+  data.saving.push({amount:amount,date:new Date().toLocaleDateString(),category:cat});
+  addHistory('saving','存入一笔','¥'+amount.toFixed(2)+' · '+(cat||'未分类'));
   save();renderAll();
   document.getElementById('saveAmount').value='';
+  if(document.getElementById('saveCat'))document.getElementById('saveCat').value='未分类';
 }
+var SAVE_CATS=['日常生活','强制储蓄','人情往来','应急备用'];
 function renderSaving(){
+  ensure();
   var total=0;
-  data.saving.forEach(function(x){total+=x.amount;});
-  var goal=10000;
-  var pct=Math.min(100,Math.round(total/goal*100));
+  data.saving.forEach(function(x){total+=(x.amount||0);});
   document.getElementById('savedTotal').textContent='¥'+total;
-  document.getElementById('savedPercent').textContent=pct+'%';
-  document.getElementById('saveProgress').style.width=pct+'%';
+  document.getElementById('saveCount').textContent=data.saving.length;
+  var cats={};
+  data.saving.forEach(function(x){var c=x.category||'未分类';cats[c]=(cats[c]||0)+(x.amount||0);});
+  var html='';
+  SAVE_CATS.forEach(function(c){
+    if(cats[c]===undefined)return;
+    var v=cats[c],pct=total>0?Math.round(v/total*100):0;
+    html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(c)+'</span><span style="color:var(--accent);font-weight:700;">¥'+v+' · '+pct+'%</span></div>';
+  });
+  if(cats['未分类']){var v=cats['未分类'],pct=total>0?Math.round(v/total*100):0;html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;font-size:13px;"><span style="color:var(--text-light);">未分类</span><span style="color:var(--text-light);">¥'+v+' · '+pct+'%</span></div>';}
+  document.getElementById('savingCats').innerHTML=html;
   var el=document.getElementById('savingList');
   el.innerHTML='';
   if(data.saving.length===0){el.innerHTML='<div class="empty">还没有存入记录</div>';return;}
@@ -1594,12 +1672,91 @@ function renderSaving(){
     var realIdx=data.saving.length-1-i;
     var div=document.createElement('div');
     div.className='task-item';
-    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">'+s.date+'</div>'+mtimeTag(s)+'</div>'+
+    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">🏷 '+(s.category||'未分类')+' · '+s.date+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delSaving('+realIdx+')">删</button>';
     el.appendChild(div);
   });
 }
 function delSaving(i){var s=data.saving[i];data.saving.splice(i,1);addHistory('saving','删除存入','¥'+s.amount.toFixed(2));save();renderAll();}
+
+/* ========== 学习打卡 ========== */
+var STUDY_SUBJECTS=['行测','申论','政治理论常识','时政'];
+function addStudy(){
+  ensure();
+  var date=(document.getElementById('studyDate').value||todayStr());
+  var subject=document.getElementById('studySubject').value;
+  var content=document.getElementById('studyContent').value.trim();
+  var minutes=parseInt(document.getElementById('studyMinutes').value,10);
+  if(isNaN(minutes)||minutes<=0){alert('请输入学习时长（分钟）');return;}
+  data.study.push({date:date,subject:subject,content:content,minutes:minutes,mtime:fmtDateTime()});
+  addHistory('study','学习打卡',subject+' · '+(content||'')+' · '+minutes+'分钟');
+  save();renderAll();
+  document.getElementById('studyContent').value='';
+  document.getElementById('studyMinutes').value='';
+}
+function delStudy(i){if(confirm('删除这条学习记录？')){var s=data.study[i];data.study.splice(i,1);addHistory('study','删除学习记录',s.subject||'');save();renderAll();}}
+function renderStudy(){
+  var el=document.getElementById('studyList');if(!el)return;
+  el.innerHTML='';
+  if(!data.study||data.study.length===0){el.innerHTML='<div class="empty">还没有学习记录，选好科目和时长记录一下吧</div>';return;}
+  var arr=data.study.slice().sort(function(a,b){return (b.date||'')<(a.date||'')?-1:((b.date||'')>(a.date||'')?1:0);});
+  arr.forEach(function(s){
+    var realIdx=data.study.indexOf(s);
+    var div=document.createElement('div');div.className='task-item';
+    div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.subject||'')+'：'+esc(s.content||'(未填写内容)')+'</div>'+
+      '<div class="task-meta">📅 '+esc(s.date||'')+' · ⏱ '+(s.minutes||0)+' 分钟</div>'+mtimeTag(s)+'</div>'+
+      '<button class="btn-small btn-del" onclick="delStudy('+realIdx+')">删</button>';
+    el.appendChild(div);
+  });
+}
+function renderStudyCalendar(){
+  if(!studyCalCursor)studyCalCursor=new Date();
+  var now=new Date();
+  var y=studyCalCursor.getFullYear(),m=studyCalCursor.getMonth();
+  document.getElementById('studyCalMonth').innerHTML='📅 '+y+'年'+(m+1)+'月 '+
+    '<span style="margin-left:8px;">'+
+    '<button class="btn-small btn-edit" onclick="studyMoveMonth(-1)" style="margin-right:4px;">‹</button>'+
+    '<button class="btn-small btn-edit" onclick="studyMoveMonth(1)">›</button></span>'+
+    '<button class="btn-small btn-edit" onclick="studyBackToday()" style="margin-left:8px;">今天</button>';
+  var grid=document.getElementById('studyCalGrid');grid.innerHTML='';
+  ['日','一','二','三','四','五','六'].forEach(function(h){var d=document.createElement('div');d.className='cal-head';d.textContent=h;grid.appendChild(d);});
+  var first=new Date(y,m,1).getDay();
+  var last=new Date(y,m+1,0).getDate();
+  var prev=new Date(y,m,0).getDate();
+  for(var i=first-1;i>=0;i--){var d=document.createElement('div');d.className='cal-day muted';d.innerHTML='<span class="cal-num">'+(prev-i)+'</span>';grid.appendChild(d);}
+  var selDate=document.getElementById('studyDate')?document.getElementById('studyDate').value:'';
+  for(var dd=1;dd<=last;dd++){
+    var el=document.createElement('div');
+    var dateStr=y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+    var isToday=(dd===now.getDate()&&m===now.getMonth()&&y===now.getFullYear());
+    var hasStudy=data.study.some(function(s){return s.date===dateStr;});
+    var isSel=(dateStr===selDate);
+    el.className='cal-day'+(isToday?' active':'')+(hasStudy?' has-study':'')+(isSel?' sel':'');
+    el.innerHTML='<span class="cal-num">'+dd+'</span>'+(hasStudy?'<span class="cal-mark">📚</span>':'');
+    el.onclick=function(ds){return function(){var inp=document.getElementById('studyDate');if(inp)inp.value=ds;renderStudyCalendar();};}(dateStr);
+    grid.appendChild(el);
+  }
+  var remain=(7-(grid.children.length%7))%7;
+  for(var i=1;i<=remain;i++){var d=document.createElement('div');d.className='cal-day muted';d.innerHTML='<span class="cal-num">'+i+'</span>';grid.appendChild(d);}
+  /* 统计 */
+  var total=0,days={},subj={};
+  data.study.forEach(function(s){total+=(s.minutes||0);days[s.date]=true;subj[s.subject]=(subj[s.subject]||0)+(s.minutes||0);});
+  var tEl=document.getElementById('studyTotal'),dEl=document.getElementById('studyDays');
+  if(tEl)tEl.textContent=total;
+  if(dEl)dEl.textContent=Object.keys(days).length;
+  var sEl=document.getElementById('studySubjectStat');
+  if(sEl){
+    var html='';
+    STUDY_SUBJECTS.forEach(function(sub){
+      if(subj[sub]===undefined)return;
+      var v=subj[sub],pct=total>0?Math.round(v/total*100):0;
+      html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(sub)+'</span><span style="color:var(--accent);font-weight:700;">'+v+' 分钟 · '+pct+'%</span></div>';
+    });
+    sEl.innerHTML=html;
+  }
+}
+function studyMoveMonth(delta){studyCalCursor.setMonth(studyCalCursor.getMonth()+delta);renderStudyCalendar();}
+function studyBackToday(){studyCalCursor=new Date();renderStudyCalendar();}
 
 /* ========== 时政 ========== */
 function addNews(){
@@ -2174,7 +2331,7 @@ function exportData(){
   var stamp=new Date();
   var pad=function(n){return String(n).padStart(2,'0');};
   var ts=stamp.getFullYear()+pad(stamp.getMonth()+1)+pad(stamp.getDate())+'-'+pad(stamp.getHours())+pad(stamp.getMinutes());
-  var moduleList=['每日计划','心情记录','读书记录','观影记录','运动锻炼','存钱计划','时事政治','历史记录','旅游日记','树洞'];
+  var moduleList=['每日计划','心情记录','读书记录','观影记录','运动锻炼','存钱计划','学习打卡','时事政治','历史记录','旅游日记','树洞'];
   /* 统计各模块记录条数，写入备份便于核对 */
   var counts={
     每日计划:(data.todo?data.todo.length:0)+(data.done?data.done.length:0),
@@ -2183,6 +2340,7 @@ function exportData(){
     观影记录:(data.moviesWatched?data.moviesWatched.length:0)+(data.moviesWishlist?data.moviesWishlist.length:0),
     运动锻炼:data.sport?data.sport.length:0,
     存钱计划:data.saving?data.saving.length:0,
+    学习打卡:data.study?data.study.length:0,
     时事政治:data.news?data.news.length:0,
     历史记录:data.history?data.history.length:0,
     旅游日记:data.travel?data.travel.length:0,
@@ -2231,6 +2389,7 @@ renderVideos('courseMain',ouyangVideos);
 renderVideos('courseOther',otherVideos);
 renderTravelInspiration();
 renderAll();
+var _sd=document.getElementById('studyDate');if(_sd)_sd.value=todayStr();
 
 /* 心跳保活：App 每次打开或切回前台时，向云端发一个极简请求维持项目活跃（已配置云端才触发） */
 cloudHeartbeat();
