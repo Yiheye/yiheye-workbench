@@ -412,8 +412,7 @@
       <div class="saving-stat">
         <div class="stat-card g"><div class="big" id="savedTotal">¥0</div><div class="small">存款总额</div></div>
         <div class="stat-card y"><div class="big" id="expenseTotal">¥0</div><div class="small">累计支出</div></div>
-        <div class="stat-card"><div class="big" id="saveCount">0</div><div class="small">存入笔数</div></div>
-        <div class="stat-card"><div class="big" id="expenseCount">0</div><div class="small">支出笔数</div></div>
+        <div class="stat-card b"><div class="big" id="balanceTotal">¥0</div><div class="small">实时余额</div></div>
       </div>
       <div id="savingCats" style="background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:16px;"></div>
       <div class="card">
@@ -1675,8 +1674,10 @@ function renderSaving(){
   ensure();
   var total=0;
   data.saving.forEach(function(x){total+=(x.amount||0);});
+  var expTotal=0;(data.expense||[]).forEach(function(x){expTotal+=(x.amount||0);});
   document.getElementById('savedTotal').textContent='¥'+total;
-  document.getElementById('saveCount').textContent=data.saving.length;
+  var eEl=document.getElementById('expenseTotal');if(eEl)eEl.textContent='¥'+expTotal;
+  var bEl=document.getElementById('balanceTotal');if(bEl)bEl.textContent='¥'+(total-expTotal);
   var cats={'未分类':0};
   SAVE_CATS.forEach(function(c){cats[c]=0;});
   data.saving.forEach(function(x){var c=x.category||'未分类';cats[c]=(cats[c]||0)+(x.amount||0);});
