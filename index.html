@@ -256,7 +256,23 @@
       .mood-card.wide{grid-column:span 2;}
       .course-grid,.stats-row,.saving-stat{grid-template-columns:repeat(2,1fr);}
     }
-  </style>
+  /* ===== 打印报告样式 ===== */
+#printArea{display:none;}
+@media print{
+  body *{visibility:hidden !important;}
+  #printArea,#printArea *{visibility:visible !important;}
+  #printArea{display:block !important;position:absolute;left:0;top:0;width:100%;padding:24px;box-sizing:border-box;color:#000;background:#fff;}
+  .pr-h1{font-size:22px;margin:0 0 4px;}
+  .pr-sub{font-size:12px;color:#666;margin-bottom:18px;}
+  .pr-sec{margin-bottom:22px;page-break-inside:avoid;}
+  .pr-sec h2{font-size:16px;border-bottom:2px solid #333;padding-bottom:4px;margin:0 0 8px;}
+  .pr-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .pr-table th,.pr-table td{border:1px solid #ccc;padding:5px 8px;text-align:left;vertical-align:top;}
+  .pr-table th{background:#f0f0f0;}
+  .pr-sum{font-size:13px;margin-top:6px;}
+  .pr-sum b{color:#c0392b;}
+}
+</style>
 </head>
 <body>
   <nav>
@@ -1678,15 +1694,23 @@ function renderSaving(){
   document.getElementById('savedTotal').textContent='¥'+total;
   var eEl=document.getElementById('expenseTotal');if(eEl)eEl.textContent='¥'+expTotal;
   var bEl=document.getElementById('balanceTotal');if(bEl)bEl.textContent='¥'+(total-expTotal);
-  var cats={'未分类':0};
-  SAVE_CATS.forEach(function(c){cats[c]=0;});
-  data.saving.forEach(function(x){var c=x.category||'未分类';cats[c]=(cats[c]||0)+(x.amount||0);});
+  var depByCat={'未分类':0},expByCat={'未分类':0};
+  SAVE_CATS.forEach(function(c){depByCat[c]=0;expByCat[c]=0;});
+  data.saving.forEach(function(x){var c=x.category||'未分类';depByCat[c]=(depByCat[c]||0)+(x.amount||0);});
+  (data.expense||[]).forEach(function(x){var c=x.category||'未分类';expByCat[c]=(expByCat[c]||0)+(x.amount||0);});
   var html='';
-  SAVE_CATS.forEach(function(c){
-    var v=cats[c],pct=total>0?Math.round(v/total*100):0;
-    html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(c)+'</span><span style="color:var(--accent);font-weight:700;">¥'+v+' · '+pct+'%</span></div>';
-  });
-  if(cats['未分类']>0){var v=cats['未分类'],pct=total>0?Math.round(v/total*100):0;html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;font-size:13px;"><span style="color:var(--text-light);">未分类</span><span style="color:var(--text-light);">¥'+v+' · '+pct+'%</span></div>';}
+  function catRow(c){
+    var d=depByCat[c]||0,e=expByCat[c]||0,net=d-e;
+    var netColor=net>=0?'var(--accent)':'#d9534f';
+    var pct=total>0?Math.round(d/total*100):0;
+    return '<div style="padding:8px 2px;border-bottom:1px dashed #efe7df;">'+
+      '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text);font-weight:600;">'+esc(c)+'</span>'+
+      '<span style="color:'+netColor+';font-weight:700;">余额 ¥'+net+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-light);margin-top:3px;">'+
+      '<span>存 ¥'+d+' · 支 ¥'+e+'</span><span>占存款 '+pct+'%</span></div></div>';
+  }
+  SAVE_CATS.forEach(function(c){html+=catRow(c);});
+  if((depByCat['未分类']>0)||(expByCat['未分类']>0))html+=catRow('未分类');
   document.getElementById('savingCats').innerHTML=html;
   var el=document.getElementById('savingList');
   el.innerHTML='';
@@ -1763,9 +1787,9 @@ function addStudy(){
   var subject=document.getElementById('studySubject').value;
   var content=document.getElementById('studyContent').value.trim();
   var minutes=parseInt(document.getElementById('studyMinutes').value,10);
-  if(isNaN(minutes)||minutes<=0){alert('请输入学习时长（分钟）');return;}
+  if(isNaN(minutes)||minutes<0)minutes=0;
   data.study.push({date:date,subject:subject,content:content,minutes:minutes,mtime:fmtDateTime()});
-  addHistory('study','学习打卡',subject+' · '+(content||'')+' · '+minutes+'分钟');
+  addHistory('study','学习打卡',subject+' · '+(content||'')+(minutes>0?(' · '+minutes+'分钟'):' · 未记时长'));
   save();renderAll();
   document.getElementById('studyContent').value='';
   document.getElementById('studyMinutes').value='';
@@ -1780,7 +1804,7 @@ function renderStudy(){
     var realIdx=data.study.indexOf(s);
     var div=document.createElement('div');div.className='task-item';
     div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.subject||'')+'：'+esc(s.content||'(未填写内容)')+'</div>'+
-      '<div class="task-meta">📅 '+esc(s.date||'')+' · ⏱ '+(s.minutes||0)+' 分钟</div>'+mtimeTag(s)+'</div>'+
+      '<div class="task-meta">📅 '+esc(s.date||'')+' · ⏱ '+(s.minutes&&s.minutes>0?(s.minutes+' 分钟'):'未记录时长')+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delStudy('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -2366,6 +2390,7 @@ function openSettings(){
     '<div style="background:var(--accent-soft);padding:12px;border-radius:12px;font-size:13px;color:var(--text-light);line-height:1.6;">💡 长按左侧栏目按钮可拖拽排序</div>'+
     '<button onclick="exportData()" style="text-align:left;padding:14px;border-radius:12px;border:2px solid var(--accent);background:var(--accent-soft);cursor:pointer;font-size:14px;font-weight:700;color:var(--accent);">📦 导出完整备份包（含全部记录）</button>'+
     '<button onclick="importData()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #e5ddd6;background:#fbfbfb;cursor:pointer;font-size:14px;color:var(--text);">📥 导入恢复数据</button>'+
+    '<button onclick="printReport()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #bcd4f0;background:#eef6ff;cursor:pointer;font-size:14px;font-weight:700;color:#2b6cb0;">🖨️ 打印 / 导出 PDF（学习记录等数据）</button>'+
     '<div style="border:1px solid #e5ddd6;border-radius:12px;padding:14px;">'+
     '<div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text);">☁️ 云端同步（多端同步）</div>'+
     '<div style="font-size:12px;color:var(--text-light);margin-bottom:8px;line-height:1.5;">在 Supabase 免费创建项目并建表后填入，即可手机电脑同步数据。详见部署文档。</div>'+
@@ -2459,6 +2484,82 @@ function importData(){
   input.click();
 }
 function clearAllData(){if(confirm('确定清空所有数据吗？此操作不可恢复！')){localStorage.removeItem('yiheyeData');localStorage.removeItem('yiheyeSettings');location.reload();}}
+function prTable(title,rows,cols){
+  if(!rows||!rows.length)return '<div class="pr-sec"><h2>'+title+'</h2><div style="font-size:12px;color:#888;">（暂无记录）</div></div>';
+  var h='<tr>'+cols.map(function(c){return '<th>'+c.h+'</th>';}).join('')+'</tr>';
+  var b=rows.map(function(r){return '<tr>'+cols.map(function(c){return '<td>'+esc(c.f(r)||'')+'</td>';}).join('')+'</tr>';}).join('');
+  return '<div class="pr-sec"><h2>'+title+'</h2><table class="pr-table"><thead>'+h+'</thead><tbody>'+b+'</tbody></table></div>';
+}
+function prSum(){
+  var dep=0;(data.saving||[]).forEach(function(x){dep+=(x.amount||0);});
+  var exp=0;(data.expense||[]).forEach(function(x){exp+=(x.amount||0);});
+  return '<div class="pr-sec"><h2>💰 存钱汇总</h2><div class="pr-sum">存款总额 ¥'+dep+' &nbsp;｜&nbsp; 累计支出 ¥'+exp+' &nbsp;｜&nbsp; 实时余额 <b>¥'+(dep-exp)+'</b></div></div>';
+}
+function printReport(){
+  try{
+    var html='<div class="pr-h1">一禾叶 · 工作台 数据报告</div>'+
+      '<div class="pr-sub">生成时间：'+new Date().toLocaleString()+(settings&&settings.cloud&&settings.cloud.userId?(' · 同步ID：'+settings.cloud.userId):'')+'</div>';
+    html+=prSum();
+    html+=prTable('📚 学习打卡',data.study,[
+      {h:'日期',f:function(r){return r.date||'';}},
+      {h:'科目',f:function(r){return r.subject||'';}},
+      {h:'内容',f:function(r){return r.content||'';}},
+      {h:'时长(分)',f:function(r){return (r.minutes&&r.minutes>0)?r.minutes:'-';}}
+    ]);
+    html+=prTable('💰 存款明细',data.saving,[
+      {h:'日期',f:function(r){return r.date||'';}},
+      {h:'分类',f:function(r){return r.category||'未分类';}},
+      {h:'金额',f:function(r){return '¥'+(r.amount||0);}}
+    ]);
+    html+=prTable('💸 支出明细',data.expense,[
+      {h:'日期',f:function(r){return r.date||'';}},
+      {h:'分类',f:function(r){return r.category||'未分类';}},
+      {h:'备注',f:function(r){return r.note||'';}},
+      {h:'金额',f:function(r){return '¥'+(r.amount||0);}}
+    ]);
+    html+=prTable('📅 每日待办',data.todo,[
+      {h:'内容',f:function(r){return r.text||'';}},
+      {h:'时间',f:function(r){return r.time||'';}}
+    ]);
+    html+=prTable('✅ 每日已完成',data.done,[
+      {h:'内容',f:function(r){return r.text||'';}},
+      {h:'时间',f:function(r){return r.time||'';}}
+    ]);
+    html+=prTable('📖 读书',(data.booksReading||[]).concat(data.booksFinished||[]).concat(data.booksWishlist||[]),[
+      {h:'书名',f:function(r){return r.title||'';}},
+      {h:'进度/评分',f:function(r){return r.progress?r.progress+'%':(r.rating?r.rating+'星':'');}},
+      {h:'感想',f:function(r){return r.review||'';}}
+    ]);
+    html+=prTable('🎬 观影',data.moviesWatched,[
+      {h:'片名',f:function(r){return r.name||'';}},
+      {h:'类型',f:function(r){return r.type||'';}}
+    ]);
+    html+=prTable('🧘 运动',data.sport,[
+      {h:'内容',f:function(r){return r.text||'';}},
+      {h:'日期',f:function(r){return r.note||'';}}
+    ]);
+    html+=prTable('🤍 心情',data.moods,[
+      {h:'日期',f:function(r){return r.date||'';}},
+      {h:'心情',f:function(r){return r.mood||'';}},
+      {h:'日记',f:function(r){return r.note||'';}}
+    ]);
+    html+=prTable('🌳 树洞',data.treeholes,[
+      {h:'日期',f:function(r){return r.date||'';}},
+      {h:'内容',f:function(r){return r.text||'';}}
+    ]);
+    html+=prTable('🏛️ 时政',data.news,[
+      {h:'标题',f:function(r){return r.title||'';}},
+      {h:'来源',f:function(r){return r.source||'';}}
+    ]);
+    html+=prTable('✈️ 旅游',data.travel,[
+      {h:'地点',f:function(r){return r.place||'';}},
+      {h:'日期',f:function(r){return r.date||'';}}
+    ]);
+    var pa=document.getElementById('printArea');
+    if(pa)pa.innerHTML=html;
+    window.print();
+  }catch(e){alert('生成打印内容失败：'+e.message);}
+}
 
 /* ========== 初始化 ========== */
 applyTheme(settings.theme);
@@ -2485,5 +2586,6 @@ if('serviceWorker' in navigator){
   }).catch(function(){});
 }
 </script>
+  <div id="printArea"></div>
 </body>
 </html>
