@@ -432,6 +432,10 @@
       </div>
       <div id="savingCats" style="background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:16px;"></div>
       <div class="card">
+        <div class="card-title" style="justify-content:space-between;"><span>💰 本期工资周期汇总</span><span id="cycleRange" style="font-size:12px;color:var(--text-light);"></span></div>
+        <div id="cycleSummary" style="font-size:13px;"></div>
+      </div>
+      <div class="card">
         <div class="card-title">💰 存入一笔</div>
         <div class="save-action" style="flex-wrap:wrap;gap:8px;">
           <input type="number" id="saveAmount" placeholder="存入金额" style="flex:1;min-width:110px;">
@@ -796,12 +800,13 @@ var themes={
 
 /* ========== 数据存储 ========== */
 var data={};
-var settings={theme:'green',navOrder:[],cloud:{url:'',key:'',userId:'',auto:false}};
+var settings={theme:'green',navOrder:[],salaryDay:1,cloud:{url:'',key:'',userId:'',auto:false}};
 try{data=JSON.parse(localStorage.getItem('yiheyeData')||'{}');}catch(e){data={};}
 try{settings=JSON.parse(localStorage.getItem('yiheyeSettings')||'{}');}catch(e){settings={theme:'green',navOrder:[]};}
 if(!settings.theme)settings.theme='green';
 if(!settings.navOrder)settings.navOrder=[];
 if(!settings.cloud)settings.cloud={url:'',key:'',userId:'',auto:false};
+if(!settings.salaryDay)settings.salaryDay=1;
 var def={
   todo:[{text:'完成今日阅读30分钟',time:'09:00',done:false}],
   done:[{text:'英语对话跟读练习',time:'07:00',done:true}],
@@ -1707,11 +1712,12 @@ function renderSaving(){
       '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text);font-weight:600;">'+esc(c)+'</span>'+
       '<span style="color:'+netColor+';font-weight:700;">余额 ¥'+net+'</span></div>'+
       '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-light);margin-top:3px;">'+
-      '<span>存 ¥'+d+' · 支 ¥'+e+'</span><span>占存款 '+pct+'%</span></div></div>';
+      '<span>存 ¥'+d+' · 支 ¥'+e+'</span><span>存占比 '+pct+'% · 支占比 '+(expTotal>0?Math.round(e/expTotal*100):0)+'%</span></div></div>';
   }
   SAVE_CATS.forEach(function(c){html+=catRow(c);});
   if((depByCat['未分类']>0)||(expByCat['未分类']>0))html+=catRow('未分类');
   document.getElementById('savingCats').innerHTML=html;
+  renderCycle();
   var el=document.getElementById('savingList');
   el.innerHTML='';
   if(data.saving.length===0){el.innerHTML='<div class="empty">还没有存入记录</div>';return;}
@@ -1725,6 +1731,37 @@ function renderSaving(){
   });
 }
 function delSaving(i){var s=data.saving[i];data.saving.splice(i,1);addHistory('saving','删除存入','¥'+s.amount.toFixed(2));save();renderAll();}
+
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function parseDate(s){
+  if(!s)return null;var m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return new Date(+m[1],+m[2]-1,+m[3]);
+  if((m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/)))return new Date(+m[1],+m[2]-1,+m[3]);
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)))return new Date(+m[3],+m[1]-1,+m[2]);
+  var t=Date.parse(s);return isNaN(t)?null:new Date(t);
+}
+function cycleRange(){
+  var day=Math.min(28,Math.max(1,settings.salaryDay||1));
+  var now=new Date();
+  var start=new Date(now.getFullYear(),now.getMonth(),day);
+  if(now.getDate()<day)start=new Date(now.getFullYear(),now.getMonth()-1,day);
+  var end=new Date(start.getFullYear(),start.getMonth()+1,day-1);
+  return {start:start,end:end,day:day};
+}
+function renderCycle(){
+  var r=cycleRange();
+  var rEl=document.getElementById('cycleRange');if(rEl)rEl.textContent=fmtDate(r.start)+' ~ '+fmtDate(r.end);
+  var dep=0,exp=0;var cDep={'未分类':0},cExp={'未分类':0};SAVE_CATS.forEach(function(c){cDep[c]=0;cExp[c]=0;});
+  data.saving.forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){dep+=(x.amount||0);var c=x.category||'未分类';cDep[c]=(cDep[c]||0)+(x.amount||0);}});
+  (data.expense||[]).forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){exp+=(x.amount||0);var c=x.category||'未分类';cExp[c]=(cExp[c]||0)+(x.amount||0);}});
+  var sEl=document.getElementById('cycleSummary');if(!sEl)return;
+  var net=dep-exp;
+  var html='<div style="display:flex;gap:16px;font-size:14px;margin-bottom:8px;">存款 <b style="color:var(--accent);">¥'+dep+'</b> · 支出 <b style="color:#d9534f;">¥'+exp+'</b> · 净 <b>¥'+net+'</b></div>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+  SAVE_CATS.forEach(function(c){html+='<span style="font-size:12px;background:#f5f5f5;padding:4px 8px;border-radius:8px;">'+esc(c)+' 存¥'+(cDep[c]||0)+'/支¥'+(cExp[c]||0)+'</span>';});
+  html+='</div>';
+  sEl.innerHTML=html;
+}
 
 /* ========== 消费支出（与存款分开管理） ========== */
 function addExpense(){
@@ -2383,6 +2420,8 @@ function openSettings(){
   panel=document.createElement('div');
   panel.id='settingsPanel';
   panel.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;';
+  var MODULES=[['study','学习打卡'],['saving','存钱计划'],['todo','每日计划'],['reading','读书记录'],['movie','观影记录'],['sport','运动锻炼'],['mood','心情记录'],['treehole','树洞'],['news','时政'],['travel','旅游日记']];
+  var modBtns=MODULES.map(function(m){return '<button onclick="printModule(\''+m[0]+'\')" style="padding:8px 10px;border-radius:8px;border:1px solid #bcd4f0;background:#eef6ff;color:#2b6cb0;font-size:12px;cursor:pointer;">🖨️ '+m[1]+'</button>';}).join('');
   panel.innerHTML='<div style="background:#fff;border-radius:20px;max-width:360px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.2);max-height:80vh;overflow-y:auto;">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><h3 style="margin:0;font-size:18px;color:var(--text);">⚙️ 设置</h3><button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light);">✕</button></div>'+
     '<div style="display:flex;flex-direction:column;gap:14px;">'+
@@ -2390,7 +2429,17 @@ function openSettings(){
     '<div style="background:var(--accent-soft);padding:12px;border-radius:12px;font-size:13px;color:var(--text-light);line-height:1.6;">💡 长按左侧栏目按钮可拖拽排序</div>'+
     '<button onclick="exportData()" style="text-align:left;padding:14px;border-radius:12px;border:2px solid var(--accent);background:var(--accent-soft);cursor:pointer;font-size:14px;font-weight:700;color:var(--accent);">📦 导出完整备份包（含全部记录）</button>'+
     '<button onclick="importData()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #e5ddd6;background:#fbfbfb;cursor:pointer;font-size:14px;color:var(--text);">📥 导入恢复数据</button>'+
-    '<button onclick="printReport()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #bcd4f0;background:#eef6ff;cursor:pointer;font-size:14px;font-weight:700;color:#2b6cb0;">🖨️ 打印 / 导出 PDF（学习记录等数据）</button>'+
+    '<button onclick="printReport()" style="text-align:left;padding:14px;border-radius:12px;border:1px solid #bcd4f0;background:#eef6ff;cursor:pointer;font-size:14px;font-weight:700;color:#2b6cb0;">🖨️ 打印 / 导出 PDF（全部数据）</button>'+
+    '<div style="border:1px solid #e5ddd6;border-radius:12px;padding:14px;">'+
+    '<div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--text);">🖨️ 单板块导出 PDF</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:8px;">'+modBtns+'</div></div>'+
+    '<div style="border:1px solid #e5ddd6;border-radius:12px;padding:14px;">'+
+    '<div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text);">🗓️ 工资周期起始日</div>'+
+    '<div style="font-size:12px;color:var(--text-light);margin-bottom:8px;line-height:1.5;">设置每月几号发工资，存钱计划将生成「本期周期汇总」（也可在打印报告中查看）。</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;">'+
+    '<input id="salaryDay" type="number" min="1" max="28" placeholder="1" style="width:70px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">'+
+    '<button onclick="saveSalaryDay()" style="padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;">保存</button>'+
+    '</div></div>'+
     '<div style="border:1px solid #e5ddd6;border-radius:12px;padding:14px;">'+
     '<div style="font-size:14px;font-weight:700;margin-bottom:6px;color:var(--text);">☁️ 云端同步（多端同步）</div>'+
     '<div style="font-size:12px;color:var(--text-light);margin-bottom:8px;line-height:1.5;">在 Supabase 免费创建项目并建表后填入，即可手机电脑同步数据。详见部署文档。</div>'+
@@ -2415,9 +2464,16 @@ function openSettings(){
     var cid=document.getElementById('cloudUserId');if(cid)cid.value=settings.cloud.userId||'';
     var ca=document.getElementById('cloudAuto');if(ca)ca.checked=!!settings.cloud.auto;
   }
+  var sdEl=document.getElementById('salaryDay');if(sdEl)sdEl.value=settings.salaryDay||1;
   updateThemeUI();
 }
 function closeSettings(){var p=document.getElementById('settingsPanel');if(p)p.style.display='none';}
+function saveSalaryDay(){
+  var d=parseInt(document.getElementById('salaryDay').value,10);
+  if(isNaN(d)||d<1)d=1;if(d>28)d=28;
+  settings.salaryDay=d;saveSettings();renderAll();
+  alert('✅ 工资周期起始日已保存：每月 '+d+' 号');
+}
 function updateThemeUI(){
   var box=document.getElementById('themeOptions');if(!box)return;
   box.innerHTML='';
@@ -2495,66 +2551,52 @@ function prSum(){
   var exp=0;(data.expense||[]).forEach(function(x){exp+=(x.amount||0);});
   return '<div class="pr-sec"><h2>💰 存钱汇总</h2><div class="pr-sum">存款总额 ¥'+dep+' &nbsp;｜&nbsp; 累计支出 ¥'+exp+' &nbsp;｜&nbsp; 实时余额 <b>¥'+(dep-exp)+'</b></div></div>';
 }
+function moduleReportHTML(key){
+  switch(key){
+    case 'study': return prTable('📚 学习打卡',data.study,[
+      {h:'日期',f:function(r){return r.date||'';}},{h:'科目',f:function(r){return r.subject||'';}},
+      {h:'内容',f:function(r){return r.content||'';}},{h:'时长(分)',f:function(r){return (r.minutes&&r.minutes>0)?r.minutes:'-';}}]);
+    case 'saving': return prSum()+prTable('💰 存款明细',data.saving,[{h:'日期',f:function(r){return r.date||'';}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+prTable('💸 支出明细',data.expense,[{h:'日期',f:function(r){return r.date||'';}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'备注',f:function(r){return r.note||'';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+cycleReport();
+    case 'todo': return prTable('📅 每日待办',data.todo,[{h:'内容',f:function(r){return r.text||'';}},{h:'时间',f:function(r){return r.time||'';}}])+prTable('✅ 每日已完成',data.done,[{h:'内容',f:function(r){return r.text||'';}},{h:'时间',f:function(r){return r.time||'';}}]);
+    case 'reading': return prTable('📖 读书',(data.booksReading||[]).concat(data.booksFinished||[]).concat(data.booksWishlist||[]),[{h:'书名',f:function(r){return r.title||'';}},{h:'进度/评分',f:function(r){return r.progress?r.progress+'%':(r.rating?r.rating+'星':'');}},{h:'感想',f:function(r){return r.review||'';}}]);
+    case 'movie': return prTable('🎬 观影',data.moviesWatched,[{h:'片名',f:function(r){return r.name||'';}},{h:'类型',f:function(r){return r.type||'';}}]);
+    case 'sport': return prTable('🧘 运动',data.sport,[{h:'内容',f:function(r){return r.text||'';}},{h:'日期',f:function(r){return r.note||'';}}]);
+    case 'mood': return prTable('🤍 心情',data.moods,[{h:'日期',f:function(r){return r.date||'';}},{h:'心情',f:function(r){return r.mood||'';}},{h:'日记',f:function(r){return r.note||'';}}]);
+    case 'treehole': return prTable('🌳 树洞',data.treeholes,[{h:'日期',f:function(r){return r.date||'';}},{h:'内容',f:function(r){return r.text||'';}}]);
+    case 'news': return prTable('🏛️ 时政',data.news,[{h:'标题',f:function(r){return r.title||'';}},{h:'来源',f:function(r){return r.source||'';}}]);
+    case 'travel': return prTable('✈️ 旅游',data.travel,[{h:'地点',f:function(r){return r.place||'';}},{h:'日期',f:function(r){return r.date||'';}}]);
+  }
+  return '';
+}
+function cycleReport(){
+  var r=cycleRange();
+  var dep=0,exp=0;var cDep={'未分类':0},cExp={'未分类':0};SAVE_CATS.forEach(function(c){cDep[c]=0;cExp[c]=0;});
+  data.saving.forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){dep+=(x.amount||0);var c=x.category||'未分类';cDep[c]=(cDep[c]||0)+(x.amount||0);}});
+  (data.expense||[]).forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){exp+=(x.amount||0);var c=x.category||'未分类';cExp[c]=(cExp[c]||0)+(x.amount||0);}});
+  var net=dep-exp;
+  var html='<div class="pr-sec"><h2>💰 本期工资周期汇总（'+fmtDate(r.start)+' ~ '+fmtDate(r.end)+'）</h2>'+
+    '<div class="pr-sum">存款 ¥'+dep+' ｜ 支出 ¥'+exp+' ｜ 净余额 <b>¥'+net+'</b></div>';
+  html+='<table class="pr-table"><thead><tr><th>分类</th><th>存款</th><th>支出</th><th>净</th></tr></thead><tbody>';
+  SAVE_CATS.forEach(function(c){html+='<tr><td>'+esc(c)+'</td><td>¥'+(cDep[c]||0)+'</td><td>¥'+(cExp[c]||0)+'</td><td>¥'+((cDep[c]||0)-(cExp[c]||0))+'</td></tr>';});
+  html+='</tbody></table></div>';
+  return html;
+}
+function printModule(key){
+  var names={study:'学习打卡',saving:'存钱计划',todo:'每日计划',reading:'读书记录',movie:'观影记录',sport:'运动锻炼',mood:'心情记录',treehole:'树洞',news:'时政',travel:'旅游日记'};
+  try{
+    var html='<div class="pr-h1">一禾叶 · 工作台 · '+(names[key]||'数据')+'</div>'+
+      '<div class="pr-sub">生成时间：'+new Date().toLocaleString()+(settings&&settings.cloud&&settings.cloud.userId?(' · 同步ID：'+settings.cloud.userId):'')+'</div>'+
+      (moduleReportHTML(key)||'<div class="pr-sec"><h2>该板块</h2><div style="font-size:12px;color:#888;">（暂无记录）</div></div>');
+    var pa=document.getElementById('printArea');if(pa)pa.innerHTML=html;
+    window.print();
+  }catch(e){alert('生成打印内容失败：'+e.message);}
+}
 function printReport(){
   try{
     var html='<div class="pr-h1">一禾叶 · 工作台 数据报告</div>'+
       '<div class="pr-sub">生成时间：'+new Date().toLocaleString()+(settings&&settings.cloud&&settings.cloud.userId?(' · 同步ID：'+settings.cloud.userId):'')+'</div>';
-    html+=prSum();
-    html+=prTable('📚 学习打卡',data.study,[
-      {h:'日期',f:function(r){return r.date||'';}},
-      {h:'科目',f:function(r){return r.subject||'';}},
-      {h:'内容',f:function(r){return r.content||'';}},
-      {h:'时长(分)',f:function(r){return (r.minutes&&r.minutes>0)?r.minutes:'-';}}
-    ]);
-    html+=prTable('💰 存款明细',data.saving,[
-      {h:'日期',f:function(r){return r.date||'';}},
-      {h:'分类',f:function(r){return r.category||'未分类';}},
-      {h:'金额',f:function(r){return '¥'+(r.amount||0);}}
-    ]);
-    html+=prTable('💸 支出明细',data.expense,[
-      {h:'日期',f:function(r){return r.date||'';}},
-      {h:'分类',f:function(r){return r.category||'未分类';}},
-      {h:'备注',f:function(r){return r.note||'';}},
-      {h:'金额',f:function(r){return '¥'+(r.amount||0);}}
-    ]);
-    html+=prTable('📅 每日待办',data.todo,[
-      {h:'内容',f:function(r){return r.text||'';}},
-      {h:'时间',f:function(r){return r.time||'';}}
-    ]);
-    html+=prTable('✅ 每日已完成',data.done,[
-      {h:'内容',f:function(r){return r.text||'';}},
-      {h:'时间',f:function(r){return r.time||'';}}
-    ]);
-    html+=prTable('📖 读书',(data.booksReading||[]).concat(data.booksFinished||[]).concat(data.booksWishlist||[]),[
-      {h:'书名',f:function(r){return r.title||'';}},
-      {h:'进度/评分',f:function(r){return r.progress?r.progress+'%':(r.rating?r.rating+'星':'');}},
-      {h:'感想',f:function(r){return r.review||'';}}
-    ]);
-    html+=prTable('🎬 观影',data.moviesWatched,[
-      {h:'片名',f:function(r){return r.name||'';}},
-      {h:'类型',f:function(r){return r.type||'';}}
-    ]);
-    html+=prTable('🧘 运动',data.sport,[
-      {h:'内容',f:function(r){return r.text||'';}},
-      {h:'日期',f:function(r){return r.note||'';}}
-    ]);
-    html+=prTable('🤍 心情',data.moods,[
-      {h:'日期',f:function(r){return r.date||'';}},
-      {h:'心情',f:function(r){return r.mood||'';}},
-      {h:'日记',f:function(r){return r.note||'';}}
-    ]);
-    html+=prTable('🌳 树洞',data.treeholes,[
-      {h:'日期',f:function(r){return r.date||'';}},
-      {h:'内容',f:function(r){return r.text||'';}}
-    ]);
-    html+=prTable('🏛️ 时政',data.news,[
-      {h:'标题',f:function(r){return r.title||'';}},
-      {h:'来源',f:function(r){return r.source||'';}}
-    ]);
-    html+=prTable('✈️ 旅游',data.travel,[
-      {h:'地点',f:function(r){return r.place||'';}},
-      {h:'日期',f:function(r){return r.date||'';}}
-    ]);
+    var _all=['study','saving','todo','reading','movie','sport','mood','treehole','news','travel'];
+    _all.forEach(function(k){html+=moduleReportHTML(k);});
     var pa=document.getElementById('printArea');
     if(pa)pa.innerHTML=html;
     window.print();
