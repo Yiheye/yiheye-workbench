@@ -411,7 +411,9 @@
       </div>
       <div class="saving-stat">
         <div class="stat-card g"><div class="big" id="savedTotal">¥0</div><div class="small">存款总额</div></div>
-        <div class="stat-card y"><div class="big" id="saveCount">0</div><div class="small">累计笔数</div></div>
+        <div class="stat-card y"><div class="big" id="expenseTotal">¥0</div><div class="small">累计支出</div></div>
+        <div class="stat-card"><div class="big" id="saveCount">0</div><div class="small">存入笔数</div></div>
+        <div class="stat-card"><div class="big" id="expenseCount">0</div><div class="small">支出笔数</div></div>
       </div>
       <div id="savingCats" style="background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:16px;"></div>
       <div class="card">
@@ -428,6 +430,22 @@
           <button class="btn-green" onclick="addSaving()">存入</button>
         </div>
         <div id="savingList" style="margin-top:14px"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">💸 记一笔支出</div>
+        <div class="save-action" style="flex-wrap:wrap;gap:8px;">
+          <input type="number" id="expenseAmount" placeholder="支出金额" style="flex:1;min-width:110px;">
+          <select id="expenseCat" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
+            <option value="日常生活">日常生活 60%</option>
+            <option value="人情往来">人情往来 10%</option>
+            <option value="应急备用">应急备用 10%</option>
+            <option value="强制储蓄">强制储蓄 20%</option>
+            <option value="未分类">未分类</option>
+          </select>
+          <button class="btn-green" onclick="addExpense()">支出</button>
+        </div>
+        <input type="text" id="expenseNote" placeholder="消费备注，如：超市采购 / 朋友聚餐 / 房租" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">
+        <div id="expenseList" style="margin-top:14px"></div>
       </div>
       <div class="ratio-card">
         <h3>你的专属四分法备忘</h3>
@@ -781,6 +799,7 @@ var def={
   treeholes:[],
   study:[],
   studyCustom:[],
+  expense:[],
   history:[],
   travel:[],
   booksReading:[],
@@ -840,7 +859,7 @@ function ensure(){
   }
   /* 自动补录记录/编辑时间 */
   var _needSave=false;
-  ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study'].forEach(function(k){
+  ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study','expense'].forEach(function(k){
     if(data[k]&&data[k].length){data[k].forEach(function(it){if(it&&typeof it==='object'&&it.mtime===undefined){it.mtime=fmtDateTime();_needSave=true;}});}
   });
   if(_needSave)save();
@@ -848,7 +867,7 @@ function ensure(){
 var _cloudTimer=null;
 function save(){
   try{
-    ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study'].forEach(function(k){
+    ['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study','expense'].forEach(function(k){
       if(data[k]&&data[k].length){data[k].forEach(function(it){if(it&&typeof it==='object'&&it.mtime===undefined)it.mtime=fmtDateTime();});}
     });
     localStorage.setItem('yiheyeData',JSON.stringify(data));
@@ -898,6 +917,7 @@ function itemKey(section,it){
     case 'moviesWatched': case 'moviesWishlist': return 'v:'+t(it.name);
     case 'sport': return 's:'+t(it.text)+'|'+t(it.note);
     case 'saving': return '$:'+t(it.category)+'|'+(it.amount||'')+'|'+t(it.date);
+    case 'expense': return 'e:'+t(it.category)+'|'+(it.amount||'')+'|'+t(it.date)+'|'+t(it.note);
     case 'news': return 'n:'+t(it.title);
     case 'treeholes': return 'h:'+t(it.text);
     case 'travel': return 'w:'+t(it.place);
@@ -929,7 +949,7 @@ function cloudDownload(){
   setCloudStatus('⏳ 拉取中…');
   var ctl=(typeof AbortController!=='undefined')?new AbortController():null;
   var timer=setTimeout(function(){if(ctl)ctl.abort();},20000);
-  var sections=['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study'];
+  var sections=['todo','done','moods','booksReading','booksFinished','booksWishlist','moviesWatched','moviesWishlist','sport','saving','news','treeholes','travel','study','expense'];
   fetch(cloudApiBase()+'?user_id=eq.'+encodeURIComponent(settings.cloud.userId)+'&select=payload,updated_at',{headers:cloudHeaders(),signal:ctl?ctl.signal:undefined})
     .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(arr){
@@ -1068,6 +1088,7 @@ function renderAll(){
   renderSportRecords();
   renderCalendar();
   renderSaving();
+  renderExpense();
   renderStudy();
   renderStudyCalendar();
   renderPol();
@@ -1679,6 +1700,36 @@ function renderSaving(){
   });
 }
 function delSaving(i){var s=data.saving[i];data.saving.splice(i,1);addHistory('saving','删除存入','¥'+s.amount.toFixed(2));save();renderAll();}
+
+/* ========== 消费支出（与存款分开管理） ========== */
+function addExpense(){
+  ensure();
+  var amount=parseFloat(document.getElementById('expenseAmount').value);
+  if(isNaN(amount)||amount<=0){alert('请输入支出金额');return;}
+  var cat=document.getElementById('expenseCat')?document.getElementById('expenseCat').value:'未分类';
+  var note=document.getElementById('expenseNote').value.trim();
+  data.expense.push({amount:amount,date:new Date().toLocaleDateString(),category:cat,note:note,mtime:fmtDateTime()});
+  addHistory('saving','记一笔支出','¥'+amount.toFixed(2)+' · '+(cat||'未分类')+(note?' · '+note:''));
+  save();renderAll();
+  document.getElementById('expenseAmount').value='';
+  document.getElementById('expenseNote').value='';
+}
+function delExpense(i){if(confirm('删除这条支出记录？')){var s=data.expense[i];data.expense.splice(i,1);addHistory('saving','删除支出','¥'+s.amount.toFixed(2));save();renderAll();}}
+function renderExpense(){
+  var total=0;(data.expense||[]).forEach(function(x){total+=(x.amount||0);});
+  var tEl=document.getElementById('expenseTotal');if(tEl)tEl.textContent='¥'+total;
+  var cEl=document.getElementById('expenseCount');if(cEl)cEl.textContent=(data.expense||[]).length;
+  var el=document.getElementById('expenseList');if(!el)return;
+  el.innerHTML='';
+  if(!data.expense||data.expense.length===0){el.innerHTML='<div class="empty">还没有支出记录</div>';return;}
+  data.expense.slice().reverse().forEach(function(s,i){
+    var realIdx=data.expense.length-1-i;
+    var div=document.createElement('div');div.className='task-item';
+    div.innerHTML='<div class="task-content"><div class="task-text">支出 ¥'+s.amount+'</div><div class="task-meta">🏷 '+(s.category||'未分类')+' · '+(s.note||'')+' · '+s.date+'</div>'+mtimeTag(s)+'</div>'+
+      '<button class="btn-small btn-del" onclick="delExpense('+realIdx+')">删</button>';
+    el.appendChild(div);
+  });
+}
 
 /* ========== 学习打卡 ========== */
 var STUDY_SUBJECTS=['行测','申论','政治理论常识','时政'];
@@ -2366,6 +2417,7 @@ function exportData(){
     观影记录:(data.moviesWatched?data.moviesWatched.length:0)+(data.moviesWishlist?data.moviesWishlist.length:0),
     运动锻炼:data.sport?data.sport.length:0,
     存钱计划:data.saving?data.saving.length:0,
+    存钱支出:data.expense?data.expense.length:0,
     学习打卡:data.study?data.study.length:0,
     时事政治:data.news?data.news.length:0,
     历史记录:data.history?data.history.length:0,
