@@ -434,6 +434,14 @@
       <div class="card">
         <div class="card-title" style="justify-content:space-between;"><span>💰 本期工资周期汇总</span><span id="cycleRange" style="font-size:12px;color:var(--text-light);"></span></div>
         <div id="cycleSummary" style="font-size:13px;"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed #efe7df;">
+          <span style="font-size:12px;color:var(--text-light);">自定义周期：</span>
+          <input type="date" id="cycleStart" style="padding:5px 6px;border-radius:8px;border:1px solid #e5ddd6;font-size:12px;background:#fff;">
+          <span style="font-size:12px;color:var(--text-light);">~</span>
+          <input type="date" id="cycleEnd" style="padding:5px 6px;border-radius:8px;border:1px solid #e5ddd6;font-size:12px;background:#fff;">
+          <button onclick="applyCustomCycle()" style="padding:5px 12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;cursor:pointer;">应用</button>
+          <button onclick="clearCustomCycle()" style="padding:5px 12px;border-radius:8px;border:1px solid #e5ddd6;background:#fff;color:var(--text-light);font-size:12px;cursor:pointer;">恢复默认</button>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">💰 存入一笔</div>
@@ -1748,19 +1756,43 @@ function cycleRange(){
   var end=new Date(start.getFullYear(),start.getMonth()+1,day-1);
   return {start:start,end:end,day:day};
 }
+function currentCycle(){
+  var cc=settings.customCycle;
+  if(cc&&cc.start&&cc.end){
+    var cs=parseDate(cc.start),ce=parseDate(cc.end);
+    if(cs&&ce&&cs<=ce)return {start:cs,end:ce,custom:true};
+  }
+  return cycleRange();
+}
 function renderCycle(){
-  var r=cycleRange();
-  var rEl=document.getElementById('cycleRange');if(rEl)rEl.textContent=fmtDate(r.start)+' ~ '+fmtDate(r.end);
+  var r=currentCycle();
+  var rEl=document.getElementById('cycleRange');if(rEl)rEl.textContent=(r.custom?'🗓️ 自定义 ':'')+fmtDate(r.start)+' ~ '+fmtDate(r.end);
   var dep=0,exp=0;var cDep={'未分类':0},cExp={'未分类':0};SAVE_CATS.forEach(function(c){cDep[c]=0;cExp[c]=0;});
   data.saving.forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){dep+=(x.amount||0);var c=x.category||'未分类';cDep[c]=(cDep[c]||0)+(x.amount||0);}});
   (data.expense||[]).forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){exp+=(x.amount||0);var c=x.category||'未分类';cExp[c]=(cExp[c]||0)+(x.amount||0);}});
   var sEl=document.getElementById('cycleSummary');if(!sEl)return;
+  var csEl=document.getElementById('cycleStart'),ceEl=document.getElementById('cycleEnd');
+  if(csEl)csEl.value=(r.custom&&settings.customCycle)?settings.customCycle.start:'';
+  if(ceEl)ceEl.value=(r.custom&&settings.customCycle)?settings.customCycle.end:'';
   var net=dep-exp;
   var html='<div style="display:flex;gap:16px;font-size:14px;margin-bottom:8px;">存款 <b style="color:var(--accent);">¥'+dep+'</b> · 支出 <b style="color:#d9534f;">¥'+exp+'</b> · 净 <b>¥'+net+'</b></div>';
   html+='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
   SAVE_CATS.forEach(function(c){html+='<span style="font-size:12px;background:#f5f5f5;padding:4px 8px;border-radius:8px;">'+esc(c)+' 存¥'+(cDep[c]||0)+'/支¥'+(cExp[c]||0)+'</span>';});
   html+='</div>';
   sEl.innerHTML=html;
+}
+function applyCustomCycle(){
+  var s=document.getElementById('cycleStart').value;
+  var e=document.getElementById('cycleEnd').value;
+  if(!s||!e){alert('请选择开始和结束日期');return;}
+  var sd=parseDate(s),ed=parseDate(e);
+  if(!sd||!ed){alert('日期格式不正确');return;}
+  if(sd>ed){alert('开始日期不能晚于结束日期');return;}
+  settings.customCycle={start:fmtDate(sd),end:fmtDate(ed)};
+  saveSettings();renderCycle();
+}
+function clearCustomCycle(){
+  settings.customCycle=null;saveSettings();renderCycle();
 }
 
 /* ========== 消费支出（与存款分开管理） ========== */
@@ -2569,12 +2601,12 @@ function moduleReportHTML(key){
   return '';
 }
 function cycleReport(){
-  var r=cycleRange();
+  var r=currentCycle();
   var dep=0,exp=0;var cDep={'未分类':0},cExp={'未分类':0};SAVE_CATS.forEach(function(c){cDep[c]=0;cExp[c]=0;});
   data.saving.forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){dep+=(x.amount||0);var c=x.category||'未分类';cDep[c]=(cDep[c]||0)+(x.amount||0);}});
   (data.expense||[]).forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){exp+=(x.amount||0);var c=x.category||'未分类';cExp[c]=(cExp[c]||0)+(x.amount||0);}});
   var net=dep-exp;
-  var html='<div class="pr-sec"><h2>💰 本期工资周期汇总（'+fmtDate(r.start)+' ~ '+fmtDate(r.end)+'）</h2>'+
+  var html='<div class="pr-sec"><h2>💰 '+(r.custom?'自定义':'本期工资')+'周期汇总（'+fmtDate(r.start)+' ~ '+fmtDate(r.end)+'）</h2>'+
     '<div class="pr-sum">存款 ¥'+dep+' ｜ 支出 ¥'+exp+' ｜ 净余额 <b>¥'+net+'</b></div>';
   html+='<table class="pr-table"><thead><tr><th>分类</th><th>存款</th><th>支出</th><th>净</th></tr></thead><tbody>';
   SAVE_CATS.forEach(function(c){html+='<tr><td>'+esc(c)+'</td><td>¥'+(cDep[c]||0)+'</td><td>¥'+(cExp[c]||0)+'</td><td>¥'+((cDep[c]||0)-(cExp[c]||0))+'</td></tr>';});
