@@ -1764,21 +1764,49 @@ function currentCycle(){
   }
   return cycleRange();
 }
+function computeCycle(r){
+  var carryEnd=new Date(r.start.getFullYear(),r.start.getMonth(),r.start.getDate()-1);
+  var carry=0,dep=0,exp=0,lifeDep=0;
+  var cCarry={'未分类':0},cDep={'未分类':0},cExp={'未分类':0},cLife={'未分类':0};
+  SAVE_CATS.forEach(function(c){cCarry[c]=0;cDep[c]=0;cExp[c]=0;cLife[c]=0;});
+  data.saving.forEach(function(x){
+    var d=parseDate(x.date);var c=x.category||'未分类';var a=x.amount||0;
+    cLife[c]=(cLife[c]||0)+a;lifeDep+=a;
+    if(d&&d>=r.start&&d<=r.end){dep+=a;cDep[c]=(cDep[c]||0)+a;}
+    else if(d&&d<=carryEnd){carry+=a;cCarry[c]=(cCarry[c]||0)+a;}
+  });
+  (data.expense||[]).forEach(function(x){
+    var d=parseDate(x.date);var c=x.category||'未分类';var a=x.amount||0;
+    if(d&&d>=r.start&&d<=r.end){exp+=a;cExp[c]=(cExp[c]||0)+a;}
+    else if(d&&d<=carryEnd){carry-=a;cCarry[c]=(cCarry[c]||0)-a;}
+  });
+  return {carry:carry,dep:dep,exp:exp,net:carry+dep-exp,lifeDep:lifeDep,cCarry:cCarry,cDep:cDep,cExp:cExp,cLife:cLife};
+}
 function renderCycle(){
   var r=currentCycle();
   var rEl=document.getElementById('cycleRange');if(rEl)rEl.textContent=(r.custom?'🗓️ 自定义 ':'')+fmtDate(r.start)+' ~ '+fmtDate(r.end);
-  var dep=0,exp=0;var cDep={'未分类':0},cExp={'未分类':0};SAVE_CATS.forEach(function(c){cDep[c]=0;cExp[c]=0;});
-  data.saving.forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){dep+=(x.amount||0);var c=x.category||'未分类';cDep[c]=(cDep[c]||0)+(x.amount||0);}});
-  (data.expense||[]).forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){exp+=(x.amount||0);var c=x.category||'未分类';cExp[c]=(cExp[c]||0)+(x.amount||0);}});
   var sEl=document.getElementById('cycleSummary');if(!sEl)return;
   var csEl=document.getElementById('cycleStart'),ceEl=document.getElementById('cycleEnd');
   if(csEl)csEl.value=(r.custom&&settings.customCycle)?settings.customCycle.start:'';
   if(ceEl)ceEl.value=(r.custom&&settings.customCycle)?settings.customCycle.end:'';
-  var net=dep-exp;
-  var html='<div style="display:flex;gap:16px;font-size:14px;margin-bottom:8px;">存款 <b style="color:var(--accent);">¥'+dep+'</b> · 支出 <b style="color:#d9534f;">¥'+exp+'</b> · 净 <b>¥'+net+'</b></div>';
-  html+='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
-  SAVE_CATS.forEach(function(c){html+='<span style="font-size:12px;background:#f5f5f5;padding:4px 8px;border-radius:8px;">'+esc(c)+' 存¥'+(cDep[c]||0)+'/支¥'+(cExp[c]||0)+'</span>';});
-  html+='</div>';
+  var s=computeCycle(r);
+  var html='<div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-bottom:10px;">'+
+    '上期结转 <b>¥'+s.carry+'</b> · 本期存入 <b style="color:var(--accent);">¥'+s.dep+'</b> · 本期支出 <b style="color:#d9534f;">¥'+s.exp+'</b> · 本期结余 <b>¥'+s.net+'</b></div>';
+  function cycRow(c){
+    var cc=s.cCarry[c]||0,cd=s.cDep[c]||0,ce=s.cExp[c]||0,cb=cc+cd-ce;
+    var netColor=cb>=0?'var(--text)':'#d9534f';
+    return '<div style="padding:7px 2px;border-bottom:1px dashed #efe7df;">'+
+      '<div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--text);font-weight:600;">'+esc(c)+'</span>'+
+      '<span style="color:'+netColor+';font-weight:700;">本期结余 ¥'+cb+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-light);margin-top:3px;">'+
+      '<span>结转 ¥'+cc+' · 存 ¥'+cd+' · 支 ¥'+ce+'</span>'+
+      '<span>历史本金 ¥'+(s.cLife[c]||0)+'</span></div></div>';
+  }
+  var rows='';
+  SAVE_CATS.forEach(function(c){rows+=cycRow(c);});
+  if((s.cDep['未分类']>0)||(s.cExp['未分类']>0)||((s.cCarry['未分类']||0)!==0))rows+=cycRow('未分类');
+  html+='<div>'+rows+'</div>';
+  html+='<div style="font-size:11px;color:var(--text-light);margin-top:8px;">📦 历史存入本金合计 ¥'+s.lifeDep+'（永久保留，不随支出减少）</div>';
   sEl.innerHTML=html;
 }
 function applyCustomCycle(){
@@ -2602,14 +2630,14 @@ function moduleReportHTML(key){
 }
 function cycleReport(){
   var r=currentCycle();
-  var dep=0,exp=0;var cDep={'未分类':0},cExp={'未分类':0};SAVE_CATS.forEach(function(c){cDep[c]=0;cExp[c]=0;});
-  data.saving.forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){dep+=(x.amount||0);var c=x.category||'未分类';cDep[c]=(cDep[c]||0)+(x.amount||0);}});
-  (data.expense||[]).forEach(function(x){var d=parseDate(x.date);if(d&&d>=r.start&&d<=r.end){exp+=(x.amount||0);var c=x.category||'未分类';cExp[c]=(cExp[c]||0)+(x.amount||0);}});
-  var net=dep-exp;
+  var s=computeCycle(r);
   var html='<div class="pr-sec"><h2>💰 '+(r.custom?'自定义':'本期工资')+'周期汇总（'+fmtDate(r.start)+' ~ '+fmtDate(r.end)+'）</h2>'+
-    '<div class="pr-sum">存款 ¥'+dep+' ｜ 支出 ¥'+exp+' ｜ 净余额 <b>¥'+net+'</b></div>';
-  html+='<table class="pr-table"><thead><tr><th>分类</th><th>存款</th><th>支出</th><th>净</th></tr></thead><tbody>';
-  SAVE_CATS.forEach(function(c){html+='<tr><td>'+esc(c)+'</td><td>¥'+(cDep[c]||0)+'</td><td>¥'+(cExp[c]||0)+'</td><td>¥'+((cDep[c]||0)-(cExp[c]||0))+'</td></tr>';});
+    '<div class="pr-sum">上期结转 ¥'+s.carry+' ｜ 本期存入 ¥'+s.dep+' ｜ 本期支出 ¥'+s.exp+' ｜ 本期结余 <b>¥'+s.net+'</b></div>';
+  html+='<table class="pr-table"><thead><tr><th>分类</th><th>上期结转</th><th>本期存入</th><th>本期支出</th><th>本期结余</th><th>历史本金</th></tr></thead><tbody>';
+  function row(c){var cc=s.cCarry[c]||0,cd=s.cDep[c]||0,ce=s.cExp[c]||0;return '<tr><td>'+esc(c)+'</td><td>¥'+cc+'</td><td>¥'+cd+'</td><td>¥'+ce+'</td><td>¥'+(cc+cd-ce)+'</td><td>¥'+(s.cLife[c]||0)+'</td></tr>';}
+  SAVE_CATS.forEach(function(c){html+=row(c);});
+  if((s.cDep['未分类']>0)||(s.cExp['未分类']>0)||((s.cCarry['未分类']||0)!==0))html+=row('未分类');
+  html+='<tr><td><b>合计</b></td><td><b>¥'+s.carry+'</b></td><td><b>¥'+s.dep+'</b></td><td><b>¥'+s.exp+'</b></td><td><b>¥'+s.net+'</b></td><td><b>¥'+s.lifeDep+'</b></td></tr>';
   html+='</tbody></table></div>';
   return html;
 }
