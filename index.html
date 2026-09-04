@@ -344,10 +344,10 @@
     <section id="reading" class="section">
       <h1 class="page-title">阅读存档本</h1>
       <div class="page-sub">每一本，都是成长的印记</div>
-      <div class="reading-top">
-        <div class="label">📕 本月推荐</div>
-        <div class="title">《你当像鸟飞往你的山》</div>
-        <div class="author">塔拉·韦斯特弗 | 教育改变命运的力量</div>
+      <div class="reading-top" id="monthlyBook">
+        <div class="label" style="justify-content:space-between;display:flex;align-items:center;"><span id="monthlyBookLabel">📕 本月推荐</span><button onclick="reshuffleMonthlyBook()" style="font-size:12px;padding:3px 10px;border-radius:8px;border:1px solid #fff;background:rgba(255,255,255,.5);color:var(--accent);cursor:pointer;">换一本</button></div>
+        <div class="title" id="monthlyBookTitle">《你当像鸟飞往你的山》</div>
+        <div class="author" id="monthlyBookAuthor">塔拉·韦斯特弗 | 教育改变命运的力量</div>
       </div>
       <div class="card">
         <div class="book-add-section">
@@ -849,6 +849,98 @@ function pickFresh(arr,type){
   return arr[pick];
 }
 
+/* ========== 每月推荐书单 ==========
+   按月选一本（seed=年*12+月），同月稳定、跨月换新；
+   30 天内不重复展示同一条；点"换一本"可手动切换当月 */
+var monthlyBooks=[
+  {t:'《你当像鸟飞往你的山》',a:'塔拉·韦斯特弗',d:'教育改变命运的力量。'},
+  {t:'《平凡的世界》',a:'路遥',d:'在苦难中奋斗、在平凡中伟大的生命史诗。'},
+  {t:'《活着》',a:'余华',d:'一个人和他命之间的友情。'},
+  {t:'《百年孤独》',a:'加西亚·马尔克斯',d:'一个家族七代人的命运，魔幻现实主义的经典。'},
+  {t:'《三体》三部曲',a:'刘慈欣',d:'宇宙文明的宏大史诗，叩问人类文明的终极命题。'},
+  {t:'《人类简史》',a:'尤瓦尔·赫拉利',d:'从认知革命到人工智能，重看人类如何走到今天。'},
+  {t:'《原则》',a:'瑞·达利欧',d:'生活和工作的原则体系，做事有据可依。'},
+  {t:'《被讨厌的勇气》',a:'岸见一郎 / 古贺史健',d:'阿德勒哲学入门，接纳自我、课题分离、自由即被讨厌。'},
+  {t:'《非暴力沟通》',a:'马歇尔·卢森堡',d:'观察·感受·需要·请求，让沟通回归本心。'},
+  {t:'《把时间当作朋友》',a:'李笑来',d:'与时间做朋友，心智成熟的人才能真正拥有时间。'},
+  {t:'《精进：如何成为一个很厉害的人》',a:'采铜',d:'从时间、选择、行动、学习、思维、才能、成功七个维度精进自己。'},
+  {t:'《自卑与超越》',a:'阿尔弗雷德·阿德勒',d:'理解自卑、超越自卑，从个体心理学找到生命意义。'},
+  {t:'《心流：最优体验心理学》',a:'米哈里·契克森米哈赖',d:'幸福的本质是全身心投入一件事。'},
+  {t:'《少有人走的路》',a:'M·斯科特·派克',d:'心智成熟的旅程，从自律到爱。'},
+  {t:'《毛泽东选集》',a:'毛泽东',d:'中国革命实践的理论结晶，活学活用实事求是、群众路线、独立自主。'},
+  {t:'《之江新语》',a:'习近平',d:'短小精悍的执政笔记，篇篇直面现实。'},
+  {t:'《习近平谈治国理政》',a:'习近平',d:'新时代中国特色社会主义思想的权威读本。'},
+  {t:'《红星照耀中国》',a:'埃德加·斯诺',d:'一个西方记者笔下的中国革命真实记录。'},
+  {t:'《长征》',a:'王树增',d:'人类精神史上的伟大远征。'},
+  {t:'《苦难辉煌》',a:'金一南',d:'中国共产党早期历史的深度回望。'},
+  {t:'《苏东坡传》',a:'林语堂',d:'在失意中诗意地栖居。'},
+  {t:'《万历十五年》',a:'黄仁宇',d:'大历史视角下明朝的"无声"崩溃。'},
+  {t:'《中国大历史》',a:'黄仁宇',d:'用大历史视角读懂中国何以成为中国。'},
+  {t:'《置身事内》',a:'兰小欢',d:'看懂中国经济中国与中国政府的底层逻辑。'},
+  {t:'《乡土中国》',a:'费孝通',d:'理解中国乡村社会的经典社会学读本。'},
+  {t:'《江村经济》',a:'费孝通',d:'一个村庄的中国经济人类学样本。'},
+  {t:'《杀死一只知更鸟》',a:'哈珀·李',d:'关于勇气、正义与良知的成长教科书。'},
+  {t:'《老人与海》',a:'欧内斯特·海明威',d:'一个人可以被毁灭，但不能被打败。'},
+  {t:'《了不起的盖茨比》',a:'F·斯科特·菲茨杰拉德',d:'美国梦的破碎与追寻。'},
+  {t:'《瓦尔登湖》',a:'亨利·戴维·梭罗',d:'在简单中寻找丰盈，重审生活的真正所需。'},
+  {t:'《思考，快与慢》',a:'丹尼尔·卡尼曼',d:'人类思维的两套系统，做更好的决策。'},
+  {t:'《影响力》',a:'罗伯特·西奥迪尼',d:'说服与被说服背后的心理学机制。'},
+  {t:'《高效能人士的七个习惯》',a:'史蒂芬·柯维',d:'从依赖到独立到互赖，习惯决定人生。'},
+  {t:'《深度工作》',a:'卡尔·纽波特',d:'在分心世界里重建专注力。'},
+  {t:'《刻意练习》',a:'安德斯·艾利克森',d:'从新手到大师的方法论。'},
+  {t:'《向上生长》',a:'万维钢',d:'用科学和理性照亮成长之路。'},
+  {t:'《把目标砍半》',a:'罗里·瓦登',d:'少即是多，慢即是快。'},
+  {t:'《认知觉醒》',a:'周岭',d:'开启自我改变的原动力。'},
+  {t:'《财富自由之路》',a:'李笑来',d:'认知升级是个人财富的第一性原理。'},
+  {t:'《小狗钱钱》',a:'博多·舍费尔',d:'从孩子的视角学懂理财的本质。'},
+  {t:'《穷爸爸富爸爸》',a:'罗伯特·清崎',d:'资产与负债、现金流与财务自由的启蒙。'},
+  {t:'《浪潮之巅》',a:'吴军',d:'IT 产业 100 年规律与企业兴衰。'},
+  {t:'《数学之美》',a:'吴军',d:'用数学解决搜索引擎、语音识别等真实问题。'},
+  {t:'《文明之光》',a:'吴军',d:'从文明史的角度看理解世界的演进。'},
+  {t:'《大国大民》',a:'王志纲',d:'中国民间的力量与性格底色。'},
+  {t:'《中国人史纲》',a:'柏杨',d:'用现代观点通俗写出的中国史。'},
+  {t:'《史记》',a:'司马迁',d:'史家之绝唱，无韵之离骚。'},
+  {t:'《论语》',a:'孔子',d:'仁义礼智信，半部论语治天下。'},
+  {t:'《道德经》',a:'老子',d:'五千言尽显东方哲学的深邃智慧。'},
+  {t:'《庄子》',a:'庄周',d:'逍遥齐物，精神的飞翔。'},
+  {t:'《传习录》',a:'王阳明',d:'知行合一，心学的传世经典。'},
+  {t:'《曾国藩家书》',a:'曾国藩',d:'晚清名臣的修身齐家之道。'}
+];
+function pickMonthlyBook(){
+  var now=new Date();
+  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'); // YYYY-MM
+  var seed=now.getFullYear()*12+now.getMonth();
+  var seenMap={};
+  try{seenMap=JSON.parse(localStorage.getItem('yiheyeSeen')||'{}');}catch(e){}
+  if(!seenMap.monthlyBook||typeof seenMap.monthlyBook!=='object')seenMap.monthlyBook={};
+  var override=seenMap.monthlyBook[monthKey];
+  var pick = (typeof override==='number') ? override : (seed % monthlyBooks.length);
+  if(typeof seenMap.monthlyBook[monthKey]!=='number')seenMap.monthlyBook[monthKey]=pick;
+  try{localStorage.setItem('yiheyeSeen',JSON.stringify(seenMap));}catch(e){}
+  return monthlyBooks[pick];
+}
+function renderMonthlyBook(){
+  var b=pickMonthlyBook();
+  var t=document.getElementById('monthlyBookTitle');if(t)t.textContent=b.t;
+  var a=document.getElementById('monthlyBookAuthor');if(a)a.textContent=b.a+' | '+b.d;
+}
+function reshuffleMonthlyBook(){
+  /* "换一本"：本月已展示过的 idx 跳过，取下一个月种子偏移（避开本月的） */
+  var now=new Date();
+  var monthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var seed=now.getFullYear()*12+now.getMonth();
+  var seenMap={};
+  try{seenMap=JSON.parse(localStorage.getItem('yiheyeSeen')||'{}');}catch(e){}
+  if(!seenMap.monthlyBook||typeof seenMap.monthlyBook!=='object')seenMap.monthlyBook={};
+  var currentIdx=seenMap.monthlyBook[monthKey];
+  // 取与当前不同的下一个偏移 seed+1/2/3...
+  var pick=(seed+1)%monthlyBooks.length;
+  if(pick===currentIdx)pick=(seed+2)%monthlyBooks.length;
+  seenMap.monthlyBook[monthKey]=pick;
+  try{localStorage.setItem('yiheyeSeen',JSON.stringify(seenMap));}catch(e){}
+  renderMonthlyBook();
+}
+
 var polTemplate=[
   {h4:'一、马克思主义基本原理',pts:['哲学基本问题：思维与存在的关系问题','唯物论：物质决定意识，意识对物质有能动反作用','辩证法三大规律：对立统一、量变质变、否定之否定','认识论：实践是认识的基础，认识反作用于实践','历史唯物主义：社会存在决定社会意识，生产力决定生产关系','价值规律：商品价值量由社会必要劳动时间决定','剩余价值理论：揭示资本主义剥削的秘密']},
   {h4:'二、毛泽东思想',pts:['活的灵魂：实事求是、群众路线、独立自主','新民主主义革命：无产阶级领导的、人民大众的、反帝反封建的革命','三大法宝：统一战线、武装斗争、党的建设','农村包围城市、武装夺取政权的道路','社会主义改造理论：一化三改','人民民主专政理论']},
@@ -1229,6 +1321,7 @@ function renderAll(){
   renderMood();
   renderTreehole();
   renderBooksReading();
+  renderMonthlyBook();
   renderBooksFinished();
   renderBooksWishlist();
   renderMoviesWatched();
