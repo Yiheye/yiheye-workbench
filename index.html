@@ -1362,7 +1362,7 @@ function taskItemHtml(item,key,i,opts){
   return check+
     '<div class="task-content"><div class="task-text">'+esc(item.text)+'</div>'+
     (item.time?'<div class="task-meta">⏰ '+item.time+'</div>':'')+
-    (item.date&&(key==='todo'||!opts.noToggle)?'<div class="task-meta">📅 '+item.date+'</div>':'')+
+    (item.date&&(key==='todo'||!opts.noToggle)?'<div class="task-meta">📅 '+dateWithWeekday(item.date)+'</div>':'')+
     (item.note?'<div class="task-meta">'+esc(item.note)+'</div>':'')+
     mtimeTag(item)+'</div>'+
     '<button class="btn-small btn-edit" onclick="editTask(\''+key+'\','+i+')">编辑</button>'+
@@ -1404,7 +1404,7 @@ function renderHistoryDone(){
   dates.forEach(function(date){
     var hdr=document.createElement('div');
     hdr.style.cssText='font-size:12px;color:var(--text-light);margin:10px 0 4px;font-weight:600;';
-    hdr.textContent='📅 '+date;
+    hdr.textContent='📅 '+dateWithWeekday(date);
     listEl.appendChild(hdr);
     groups[date].forEach(function(item){
       var realIdx=data.done.indexOf(item);
@@ -1491,7 +1491,7 @@ function renderMood(){
     div.className='task-item';
     div.innerHTML='<div style="font-size:28px;width:40px;text-align:center;">'+(emojiMap[m.mood]||'📝')+'</div>'+
       '<div class="task-content"><div class="task-text">'+(m.mood?m.mood+' · ':'')+esc(m.note)+'</div>'+
-      '<div class="task-meta">'+m.date+'</div>'+mtimeTag(m)+'</div>'+
+      '<div class="task-meta">'+dateWithWeekday(m.date)+'</div>'+mtimeTag(m)+'</div>'+
       '<div class="book-actions">'+
       '<button class="btn-small btn-edit" onclick="editMood('+i+')">编辑</button>'+
       '<button class="btn-small btn-del" onclick="delMood('+i+')">删</button>'+
@@ -1868,7 +1868,7 @@ function renderSportRecords(){
     var div=document.createElement('div');
     div.className='task-item';
     div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.text)+'</div>'+
-      '<div class="task-meta">📅 '+esc(s.note||'')+'</div>'+mtimeTag(s)+'</div>'+
+      '<div class="task-meta">📅 '+esc(dateWithWeekday(s.note||''))+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delSportRecord('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -1946,7 +1946,7 @@ function renderSaving(){
     var realIdx=data.saving.length-1-i;
     var div=document.createElement('div');
     div.className='task-item';
-    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">🏷 '+(s.category||'未分类')+' · '+s.date+'</div>'+mtimeTag(s)+'</div>'+
+    div.innerHTML='<div class="task-content"><div class="task-text">存入 ¥'+s.amount+'</div><div class="task-meta">🏷 '+(s.category||'未分类')+' · '+dateWithWeekday(s.date)+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delSaving('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -1954,6 +1954,10 @@ function renderSaving(){
 function delSaving(i){var s=data.saving[i];data.saving.splice(i,1);addHistory('saving','删除存入','¥'+s.amount.toFixed(2));save();renderAll();}
 
 function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+var WEEK_CN=['周日','周一','周二','周三','周四','周五','周六'];
+function weekdayOf(s){var d=parseDate(s);return d?WEEK_CN[d.getDay()]:'';}
+function dateWithWeekday(s){if(!s)return '';var w=weekdayOf(s);return w?(s+' '+w):s;}
+function mondayOf(d){var dow=d.getDay();var diff=(dow===0)?-6:(1-dow);return new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);}
 function parseDate(s){
   if(!s)return null;var m;
   if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return new Date(+m[1],+m[2]-1,+m[3]);
@@ -2060,7 +2064,7 @@ function renderExpense(){
   data.expense.slice().reverse().forEach(function(s,i){
     var realIdx=data.expense.length-1-i;
     var div=document.createElement('div');div.className='task-item';
-    div.innerHTML='<div class="task-content"><div class="task-text">支出 ¥'+s.amount+'</div><div class="task-meta">🏷 '+(s.category||'未分类')+' · '+(s.note||'')+' · '+s.date+'</div>'+mtimeTag(s)+'</div>'+
+    div.innerHTML='<div class="task-content"><div class="task-text">支出 ¥'+s.amount+'</div><div class="task-meta">🏷 '+(s.category||'未分类')+' · '+(s.note||'')+' · '+dateWithWeekday(s.date)+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delExpense('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -2114,7 +2118,7 @@ function renderStudy(){
     var realIdx=data.study.indexOf(s);
     var div=document.createElement('div');div.className='task-item';
     div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.subject||'')+'：'+esc(s.content||'(未填写内容)')+'</div>'+
-      '<div class="task-meta">📅 '+esc(s.date||'')+' · ⏱ '+(s.minutes&&s.minutes>0?(s.minutes+' 分钟'):'未记录时长')+'</div>'+mtimeTag(s)+'</div>'+
+      '<div class="task-meta">📅 '+esc(dateWithWeekday(s.date||''))+' · ⏱ '+(s.minutes&&s.minutes>0?(s.minutes+' 分钟'):'未记录时长')+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delStudy('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -2280,7 +2284,7 @@ function renderNews(){
   data.news.forEach(function(n,i){
     var div=document.createElement('div');
     div.className='news-item';
-    div.innerHTML='<div class="date">'+n.date+'</div><div class="t">'+esc(n.title)+'</div><div class="d">'+esc(n.note)+'</div>'+mtimeTag(n)+
+    div.innerHTML='<div class="date">'+dateWithWeekday(n.date)+'</div><div class="t">'+esc(n.title)+'</div><div class="d">'+esc(n.note)+'</div>'+mtimeTag(n)+
       '<div style="text-align:right;margin-top:8px;"><button class="btn-small btn-del" onclick="delNews('+i+')">删</button></div>';
     el.appendChild(div);
   });
@@ -2319,7 +2323,7 @@ function renderTreehole(){
   data.treeholes.forEach(function(h,i){
     var div=document.createElement('div');
     div.className='task-item';
-    div.innerHTML='<div class="task-content"><div class="task-text">'+(h.tag?h.tag+' ':'')+esc(h.text)+'</div><div class="task-meta">'+h.date+'</div>'+mtimeTag(h)+'</div>'+
+    div.innerHTML='<div class="task-content"><div class="task-text">'+(h.tag?h.tag+' ':'')+esc(h.text)+'</div><div class="task-meta">'+dateWithWeekday(h.date)+'</div>'+mtimeTag(h)+'</div>'+
       '<button class="btn-small btn-del" onclick="delTreehole('+i+')">删</button>';
     el.appendChild(div);
   });
@@ -2353,7 +2357,7 @@ function renderHistory(){
       div.className='task-item';
       div.innerHTML='<div style="font-size:24px;width:34px;text-align:center;">'+(iconMap[r.type]||'📌')+'</div>'+
         '<div class="task-content"><div class="task-text">'+esc(r.title)+'</div>'+
-        '<div class="task-meta">'+esc(r.date)+' '+r.time+(r.detail?' · '+esc(r.detail):'')+'</div></div>';
+        '<div class="task-meta">'+esc(dateWithWeekday(r.date))+' '+r.time+(r.detail?' · '+esc(r.detail):'')+'</div></div>';
       listEl.appendChild(div);
     });
   }
@@ -2822,20 +2826,81 @@ function prSum(){
   var exp=0;(data.expense||[]).forEach(function(x){exp+=(x.amount||0);});
   return '<div class="pr-sec"><h2>💰 存钱汇总</h2><div class="pr-sum">存款总额 ¥'+dep+' &nbsp;｜&nbsp; 累计支出 ¥'+exp+' &nbsp;｜&nbsp; 实时余额 <b>¥'+(dep-exp)+'</b></div></div>';
 }
+/* 周视图表格：行=自然周（周一~周日），7 列=周一~周日，格内填当天记录 */
+var PR_DOW=['周一','周二','周三','周四','周五','周六','周日'];
+function prWeekTable(title,rows,dateField,cellFn){
+  if(!rows||!rows.length)return '<div class="pr-sec"><h2>'+title+'</h2><div style="font-size:12px;color:#888;">（暂无记录）</div></div>';
+  var weeks={},order=[];
+  rows.forEach(function(r){
+    var ds=r[dateField]||'';var d=parseDate(ds);
+    if(!d)return;
+    var mon=mondayOf(d);var key=fmtDate(mon);
+    if(!weeks[key]){weeks[key]={mon:mon,byCol:{}};order.push(key);}
+    var dow=d.getDay();var col=(dow===0)?6:(dow-1);
+    if(!weeks[key].byCol[col])weeks[key].byCol[col]=[];
+    weeks[key].byCol[col].push(r);
+  });
+  order.sort();
+  var h='<tr><th style="white-space:nowrap;">周（周一~周日）</th>'+PR_DOW.map(function(d){return '<th>'+d+'</th>';}).join('')+'</tr>';
+  var b=order.map(function(k){
+    var w=weeks[k];
+    var sun=new Date(w.mon.getFullYear(),w.mon.getMonth(),w.mon.getDate()+6);
+    var tds='';
+    for(var i=0;i<7;i++){
+      var list=w.byCol[i]||[];
+      var inner=list.map(cellFn).join('<div style="border-top:1px dashed #ddd;margin:4px 0;"></div>');
+      tds+='<td>'+(inner||'')+'</td>';
+    }
+    return '<tr><td style="white-space:nowrap;font-size:11px;">'+fmtDate(w.mon)+'<br>~ '+fmtDate(sun)+'</td>'+tds+'</tr>';
+  }).join('');
+  return '<div class="pr-sec"><h2>'+title+'</h2><table class="pr-table"><thead>'+h+'</thead><tbody>'+b+'</tbody></table></div>';
+}
+/* 每日计划 PDF：待办归今天、已完成按完成日期分组；每条显示 计划时间 + 记录时间 */
+function prTodoReport(){
+  var today=todayStr();
+  var out='';
+  function taskRow(r){
+    return '<tr><td>'+esc(r.text||'')+'</td><td>'+esc(r.time||'')+'</td><td>'+esc(r.mtime||'')+'</td></tr>';
+  }
+  function group(title,list,dateOf){
+    if(!list||!list.length)return '<div class="pr-sec"><h2>'+title+'</h2><div style="font-size:12px;color:#888;">（暂无记录）</div></div>';
+    var groups={},order=[];
+    list.forEach(function(r){
+      var ds=dateOf(r)||'(无日期)';
+      if(!groups[ds]){groups[ds]=[];order.push(ds);}
+      groups[ds].push(r);
+    });
+    order.sort();
+    var html='<div class="pr-sec"><h2>'+title+'</h2>';
+    order.forEach(function(ds){
+      var lbl=(ds==='(无日期)')?ds:dateWithWeekday(ds);
+      html+='<div style="font-weight:700;margin:10px 0 4px;font-size:13px;">📌 '+esc(lbl)+'</div>';
+      html+='<table class="pr-table"><thead><tr><th>内容</th><th>计划时间</th><th>记录时间</th></tr></thead><tbody>';
+      groups[ds].forEach(function(r){html+=taskRow(r);});
+      html+='</tbody></table>';
+    });
+    return html+'</div>';
+  }
+  out+=group('📅 每日待办',data.todo,function(){return today;});
+  out+=group('✅ 每日已完成',data.done,function(r){return r.date||today;});
+  return out;
+}
 function moduleReportHTML(key){
   switch(key){
-    case 'study': return prTable('📚 学习打卡',data.study,[
-      {h:'日期',f:function(r){return r.date||'';}},{h:'科目',f:function(r){return r.subject||'';}},
-      {h:'内容',f:function(r){return r.content||'';}},{h:'时长(分)',f:function(r){return (r.minutes&&r.minutes>0)?r.minutes:'-';}}]);
-    case 'saving': return prSum()+prTable('💰 存款明细',data.saving,[{h:'日期',f:function(r){return r.date||'';}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+prTable('💸 支出明细',data.expense,[{h:'日期',f:function(r){return r.date||'';}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'备注',f:function(r){return r.note||'';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+cycleReport();
-    case 'todo': return prTable('📅 每日待办',data.todo,[{h:'内容',f:function(r){return r.text||'';}},{h:'时间',f:function(r){return r.time||'';}}])+prTable('✅ 每日已完成',data.done,[{h:'内容',f:function(r){return r.text||'';}},{h:'时间',f:function(r){return r.time||'';}}]);
+    case 'study': return prWeekTable('📚 学习打卡（周视图）',data.study,'date',function(r){
+      return '<div style="font-size:11px;"><b>'+esc(r.subject||'')+'</b><br>'+esc(r.content||'')+((r.minutes&&r.minutes>0)?('<br>⏱ '+r.minutes+'分'):'')+'</div>';
+    });
+    case 'saving': return prSum()+prTable('💰 存款明细',data.saving,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+prTable('💸 支出明细',data.expense,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'备注',f:function(r){return r.note||'';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+cycleReport();
+    case 'todo': return prTodoReport();
     case 'reading': return prTable('📖 读书',(data.booksReading||[]).concat(data.booksFinished||[]).concat(data.booksWishlist||[]),[{h:'书名',f:function(r){return r.title||'';}},{h:'进度/评分',f:function(r){return r.progress?r.progress+'%':(r.rating?r.rating+'星':'');}},{h:'感想',f:function(r){return r.review||'';}}]);
     case 'movie': return prTable('🎬 观影',data.moviesWatched,[{h:'片名',f:function(r){return r.name||'';}},{h:'类型',f:function(r){return r.type||'';}}]);
-    case 'sport': return prTable('🧘 运动',data.sport,[{h:'内容',f:function(r){return r.text||'';}},{h:'日期',f:function(r){return r.note||'';}}]);
-    case 'mood': return prTable('🤍 心情',data.moods,[{h:'日期',f:function(r){return r.date||'';}},{h:'心情',f:function(r){return r.mood||'';}},{h:'日记',f:function(r){return r.note||'';}}]);
-    case 'treehole': return prTable('🌳 树洞',data.treeholes,[{h:'日期',f:function(r){return r.date||'';}},{h:'内容',f:function(r){return r.text||'';}}]);
-    case 'news': return prTable('🏛️ 时政',data.news,[{h:'标题',f:function(r){return r.title||'';}},{h:'来源',f:function(r){return r.source||'';}}]);
-    case 'travel': return prTable('✈️ 旅游',data.travel,[{h:'地点',f:function(r){return r.place||'';}},{h:'日期',f:function(r){return r.date||'';}}]);
+    case 'sport': return prWeekTable('🧘 运动（周视图）',data.sport,'note',function(r){
+      return '<div style="font-size:11px;">'+esc(r.text||'')+'</div>';
+    });
+    case 'mood': return prTable('🤍 心情',data.moods,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'心情',f:function(r){return r.mood||'';}},{h:'日记',f:function(r){return r.note||'';}}]);
+    case 'treehole': return prTable('🌳 树洞',data.treeholes,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'内容',f:function(r){return r.text||'';}}]);
+    case 'news': return prTable('🏛️ 时政',data.news,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'标题',f:function(r){return r.title||'';}},{h:'来源',f:function(r){return r.source||'';}}]);
+    case 'travel': return prTable('✈️ 旅游',data.travel,[{h:'地点',f:function(r){return r.place||'';}},{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}}]);
   }
   return '';
 }
