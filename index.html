@@ -511,11 +511,10 @@
             <option value="政治理论常识">政治理论常识</option>
             <option value="时政">时政</option>
           </select>
-          <input type="number" id="studyMinutes" placeholder="时长(分钟)" step="1" style="width:110px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">
-          <select id="studyUnit" onchange="onStudyUnitChange()" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
-            <option value="h">小时</option>
-            <option value="min">分钟</option>
-          </select>
+          <input type="number" id="studyHours" placeholder="时" min="0" step="1" style="width:58px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">
+          <span style="color:var(--text-light);font-size:13px;">时</span>
+          <input type="number" id="studyMins" placeholder="分" min="0" max="59" step="1" style="width:58px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">
+          <span style="color:var(--text-light);font-size:13px;">分</span>
           <button class="btn-green" onclick="addStudy()">记录</button>
         </div>
         <input type="text" id="studyContent" placeholder="学习内容，如：资料分析速算技巧 / 乡村振兴申论范文" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">
@@ -2124,27 +2123,23 @@ function onStudySubjectChange(){
     }
   }
 }
-function onStudyUnitChange(){
-  var u=((document.getElementById('studyUnit')||{}).value)||'min';
-  var ip=document.getElementById('studyMinutes');
-  if(ip){ip.placeholder=(u==='h')?'时长(如1.5)':'时长(分钟)';ip.step=(u==='h')?'0.1':'1';}
-  try{localStorage.setItem('yiheyeStudyUnit',u);}catch(e){}
-}
 function addStudy(){
   ensure();
   var date=(document.getElementById('studyDate').value||todayStr());
   var subject=document.getElementById('studySubject').value;
   var content=document.getElementById('studyContent').value.trim();
-  var unit=((document.getElementById('studyUnit')||{}).value)||'h';
-  var raw=parseFloat(document.getElementById('studyMinutes').value);
-  if(isNaN(raw)||raw<0)raw=0;
-  var hours=(unit==='h')?(Math.round(raw*10000)/10000):(Math.round((raw/60)*10000)/10000);
-  var minutes=Math.round(hours*60);
+  var h=parseInt(document.getElementById('studyHours').value,10);
+  var m=parseInt(document.getElementById('studyMins').value,10);
+  if(isNaN(h)||h<0)h=0;
+  if(isNaN(m)||m<0)m=0;
+  var minutes=h*60+m;
+  var hours=Math.round((minutes/60)*10000)/10000;
   data.study.push({date:date,subject:subject,content:content,hours:hours,minutes:minutes,mtime:fmtDateTime()});
-  addHistory('study','学习打卡',subject+' · '+(content||'')+(hours>0?(' · '+fmtHours(hours)):' · 未记时长'));
+  addHistory('study','学习打卡',subject+' · '+(content||'')+(minutes>0?(' · '+fmtHours(hours)):' · 未记时长'));
   save();renderAll();
   document.getElementById('studyContent').value='';
-  document.getElementById('studyMinutes').value='';
+  document.getElementById('studyHours').value='';
+  document.getElementById('studyMins').value='';
 }
 function delStudy(i){if(confirm('删除这条学习记录？')){var s=data.study[i];data.study.splice(i,1);addHistory('study','删除学习记录',s.subject||'');save();renderAll();}}
 function renderStudy(){
@@ -2987,9 +2982,7 @@ renderTravelInspiration();
 renderAll();
 var _sd=document.getElementById('studyDate');if(_sd)_sd.value=todayStr();
 renderStudySubjects();
-/* 恢复上次选择的学习时长单位（分钟/小时） */
-try{var _su=localStorage.getItem('yiheyeStudyUnit');if(_su){var _suEl=document.getElementById('studyUnit');if(_suEl)_suEl.value=_su;}}catch(e){}
-if(typeof onStudyUnitChange==='function')onStudyUnitChange();
+/* 学习时长录入已改为 时/分 两个整数框，无需恢复单位下拉 */
 
 /* 心跳保活：App 每次打开或切回前台时，向云端发一个极简请求维持项目活跃（已配置云端才触发） */
 cloudHeartbeat();
