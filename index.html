@@ -511,7 +511,11 @@
             <option value="政治理论常识">政治理论常识</option>
             <option value="时政">时政</option>
           </select>
-          <input type="number" id="studyMinutes" placeholder="时长(分钟)" style="width:110px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">
+          <input type="number" id="studyMinutes" placeholder="时长(分钟)" step="1" style="width:110px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;">
+          <select id="studyUnit" onchange="onStudyUnitChange()" style="padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;background:#fff;">
+            <option value="h">小时</option>
+            <option value="min">分钟</option>
+          </select>
           <button class="btn-green" onclick="addStudy()">记录</button>
         </div>
         <input type="text" id="studyContent" placeholder="学习内容，如：资料分析速算技巧 / 乡村振兴申论范文" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid #e5ddd6;font-size:13px;box-sizing:border-box;">
@@ -520,7 +524,7 @@
       <div class="card">
         <div class="card-title">📊 学习统计</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
-          <div class="stat-card g" style="flex:1;min-width:120px;"><div class="big" id="studyTotal">0</div><div class="small">累计时长(分钟)</div></div>
+          <div class="stat-card g" style="flex:1;min-width:120px;"><div class="big" id="studyTotal">0</div><div class="small">累计时长</div></div>
           <div class="stat-card y" style="flex:1;min-width:120px;"><div class="big" id="studyDays">0</div><div class="small">打卡天数</div></div>
         </div>
         <div id="studySubjectStat" style="margin-top:12px;"></div>
@@ -1081,6 +1085,16 @@ function ensure(){
       }
     });
     data._readingMigrated=true;
+    save();
+  }
+  /* 数据迁移：学习时长 分钟存储 → 小时存储（老记录自动换算，45分钟→0.75小时） */
+  if(data.study&&data.study.length>0&&!data._studyHoursMigrated){
+    data.study.forEach(function(s){
+      if(typeof s.hours!=='number'){
+        s.hours=Math.round(((s.minutes||0)/60)*10000)/10000;
+      }
+    });
+    data._studyHoursMigrated=true;
     save();
   }
   /* 数据迁移：旧movie数组 → 新两栏结构 */
@@ -1958,6 +1972,22 @@ var WEEK_CN=['周日','周一','周二','周三','周四','周五','周六'];
 function weekdayOf(s){var d=parseDate(s);return d?WEEK_CN[d.getDay()]:'';}
 function dateWithWeekday(s){if(!s)return '';var w=weekdayOf(s);return w?(s+' '+w):s;}
 function mondayOf(d){var dow=d.getDay();var diff=(dow===0)?-6:(1-dow);return new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);}
+/* 学习时长：内部统一以「小时」存储（小数），显示时智能换算 */
+function studyHours(s){
+  if(s&&typeof s.hours==='number')return s.hours;
+  return Math.round((((s&&s.minutes)||0)/60)*10000)/10000;
+}
+/* 智能显示：不足1小时显示分钟；整小时显示"X 小时"；能精确到0.1小时显示"1.5 小时"；否则"1 小时 20 分钟" */
+function fmtHours(h){
+  h=Math.round((h||0)*10000)/10000;
+  if(h<=0)return '0 分钟';
+  if(h<1){var m=Math.round(h*60);if(m>=60)return '1 小时';return m+' 分钟';}
+  var hi=Math.floor(h+1e-9),rem=Math.round((h-hi)*60);
+  if(rem>=60){hi+=1;rem=0;}
+  if(rem===0)return hi+' 小时';
+  if(rem%6===0)return (hi+(rem/60).toFixed(1)*1)+' 小时';
+  return hi+' 小时 '+rem+' 分钟';
+}
 function parseDate(s){
   if(!s)return null;var m;
   if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)))return new Date(+m[1],+m[2]-1,+m[3]);
@@ -2095,15 +2125,24 @@ function onStudySubjectChange(){
     }
   }
 }
+function onStudyUnitChange(){
+  var u=((document.getElementById('studyUnit')||{}).value)||'min';
+  var ip=document.getElementById('studyMinutes');
+  if(ip){ip.placeholder=(u==='h')?'时长(如1.5)':'时长(分钟)';ip.step=(u==='h')?'0.1':'1';}
+  try{localStorage.setItem('yiheyeStudyUnit',u);}catch(e){}
+}
 function addStudy(){
   ensure();
   var date=(document.getElementById('studyDate').value||todayStr());
   var subject=document.getElementById('studySubject').value;
   var content=document.getElementById('studyContent').value.trim();
-  var minutes=parseInt(document.getElementById('studyMinutes').value,10);
-  if(isNaN(minutes)||minutes<0)minutes=0;
-  data.study.push({date:date,subject:subject,content:content,minutes:minutes,mtime:fmtDateTime()});
-  addHistory('study','学习打卡',subject+' · '+(content||'')+(minutes>0?(' · '+minutes+'分钟'):' · 未记时长'));
+  var unit=((document.getElementById('studyUnit')||{}).value)||'h';
+  var raw=parseFloat(document.getElementById('studyMinutes').value);
+  if(isNaN(raw)||raw<0)raw=0;
+  var hours=(unit==='h')?(Math.round(raw*10000)/10000):(Math.round((raw/60)*10000)/10000);
+  var minutes=Math.round(hours*60);
+  data.study.push({date:date,subject:subject,content:content,hours:hours,minutes:minutes,mtime:fmtDateTime()});
+  addHistory('study','学习打卡',subject+' · '+(content||'')+(hours>0?(' · '+fmtHours(hours)):' · 未记时长'));
   save();renderAll();
   document.getElementById('studyContent').value='';
   document.getElementById('studyMinutes').value='';
@@ -2118,7 +2157,7 @@ function renderStudy(){
     var realIdx=data.study.indexOf(s);
     var div=document.createElement('div');div.className='task-item';
     div.innerHTML='<div class="task-content"><div class="task-text">'+esc(s.subject||'')+'：'+esc(s.content||'(未填写内容)')+'</div>'+
-      '<div class="task-meta">📅 '+esc(dateWithWeekday(s.date||''))+' · ⏱ '+(s.minutes&&s.minutes>0?(s.minutes+' 分钟'):'未记录时长')+'</div>'+mtimeTag(s)+'</div>'+
+      '<div class="task-meta">📅 '+esc(dateWithWeekday(s.date||''))+' · ⏱ '+(studyHours(s)>0?fmtHours(studyHours(s)):'未记录时长')+'</div>'+mtimeTag(s)+'</div>'+
       '<button class="btn-small btn-del" onclick="delStudy('+realIdx+')">删</button>';
     el.appendChild(div);
   });
@@ -2154,9 +2193,9 @@ function renderStudyCalendar(){
   for(var i=1;i<=remain;i++){var d=document.createElement('div');d.className='cal-day muted';d.innerHTML='<span class="cal-num">'+i+'</span>';grid.appendChild(d);}
   /* 统计 */
   var total=0,days={},subj={};
-  data.study.forEach(function(s){total+=(s.minutes||0);days[s.date]=true;subj[s.subject]=(subj[s.subject]||0)+(s.minutes||0);});
+  data.study.forEach(function(s){var h=studyHours(s);total+=h;days[s.date]=true;subj[s.subject]=(subj[s.subject]||0)+h;});
   var tEl=document.getElementById('studyTotal'),dEl=document.getElementById('studyDays');
-  if(tEl)tEl.textContent=total;
+  if(tEl)tEl.textContent=fmtHours(total);
   if(dEl)dEl.textContent=Object.keys(days).length;
   var sEl=document.getElementById('studySubjectStat');
   if(sEl){
@@ -2166,7 +2205,7 @@ function renderStudyCalendar(){
     order.forEach(function(sub){
       if(subj[sub]===undefined)return;
       var v=subj[sub],pct=total>0?Math.round(v/total*100):0;
-      html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(sub)+'</span><span style="color:var(--accent);font-weight:700;">'+v+' 分钟 · '+pct+'%</span></div>';
+      html+='<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #efe7df;font-size:13px;"><span style="color:var(--text);">'+esc(sub)+'</span><span style="color:var(--accent);font-weight:700;">'+fmtHours(v)+' · '+pct+'%</span></div>';
     });
     sEl.innerHTML=html;
   }
@@ -2888,7 +2927,7 @@ function prTodoReport(){
 function moduleReportHTML(key){
   switch(key){
     case 'study': return prWeekTable('📚 学习打卡（周视图）',data.study,'date',function(r){
-      return '<div style="font-size:11px;"><b>'+esc(r.subject||'')+'</b><br>'+esc(r.content||'')+((r.minutes&&r.minutes>0)?('<br>⏱ '+r.minutes+'分'):'')+'</div>';
+      return '<div style="font-size:11px;"><b>'+esc(r.subject||'')+'</b><br>'+esc(r.content||'')+((studyHours(r)>0)?('<br>⏱ '+fmtHours(studyHours(r))):'')+'</div>';
     });
     case 'saving': return prSum()+prTable('💰 存款明细',data.saving,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+prTable('💸 支出明细',data.expense,[{h:'日期',f:function(r){return dateWithWeekday(r.date||'');}},{h:'分类',f:function(r){return r.category||'未分类';}},{h:'备注',f:function(r){return r.note||'';}},{h:'金额',f:function(r){return '¥'+(r.amount||0);}}])+cycleReport();
     case 'todo': return prTodoReport();
@@ -2949,6 +2988,9 @@ renderTravelInspiration();
 renderAll();
 var _sd=document.getElementById('studyDate');if(_sd)_sd.value=todayStr();
 renderStudySubjects();
+/* 恢复上次选择的学习时长单位（分钟/小时） */
+try{var _su=localStorage.getItem('yiheyeStudyUnit');if(_su){var _suEl=document.getElementById('studyUnit');if(_suEl)_suEl.value=_su;}}catch(e){}
+if(typeof onStudyUnitChange==='function')onStudyUnitChange();
 
 /* 心跳保活：App 每次打开或切回前台时，向云端发一个极简请求维持项目活跃（已配置云端才触发） */
 cloudHeartbeat();
