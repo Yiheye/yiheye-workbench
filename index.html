@@ -1985,7 +1985,6 @@ function fmtHours(h){
   var hi=Math.floor(h+1e-9),rem=Math.round((h-hi)*60);
   if(rem>=60){hi+=1;rem=0;}
   if(rem===0)return hi+' 小时';
-  if(rem%6===0)return (hi+(rem/60).toFixed(1)*1)+' 小时';
   return hi+' 小时 '+rem+' 分钟';
 }
 function parseDate(s){
