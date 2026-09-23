@@ -2950,6 +2950,36 @@ function cycleReport(){
   html+='</tbody></table></div>';
   return html;
 }
+function printDocCSS(){
+  return 'body{font-family:-apple-system,PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif;color:#000;background:#fff;margin:0;}'+
+    '#printArea{padding:24px;box-sizing:border-box;}'+
+    '.pr-h1{font-size:22px;margin:0 0 4px;}'+
+    '.pr-sub{font-size:12px;color:#666;margin-bottom:18px;}'+
+    '.pr-sec{margin-bottom:22px;page-break-inside:avoid;}'+
+    '.pr-sec h2{font-size:16px;border-bottom:2px solid #333;padding-bottom:4px;margin:0 0 8px;}'+
+    '.pr-table{width:100%;border-collapse:collapse;font-size:12px;}'+
+    '.pr-table th,.pr-table td{border:1px solid #ccc;padding:5px 8px;text-align:left;vertical-align:top;}'+
+    '.pr-table th{background:#f0f0f0;}'+
+    '.pr-sum{font-size:13px;margin-top:6px;}'+
+    '.pr-sum b{color:#c0392b;}'+
+    '.pr-bar{position:sticky;top:0;z-index:9;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#eef6ff;border-bottom:1px solid #bcd4f0;margin-bottom:16px;}'+
+    '.pr-bar button{padding:10px 16px;border-radius:8px;border:1px solid #2b6cb0;background:#2b6cb0;color:#fff;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;}'+
+    '.pr-bar span{font-size:12px;color:#2b6cb0;line-height:1.5;}'+
+    '@media print{.pr-bar{display:none !important;}}';
+}
+/* 在新窗口打开独立打印页（iOS 主屏PWA内 window.print() 无效，必须切到浏览器环境打印） */
+function openPrintDoc(title,inner){
+  try{
+    var doc='<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+title+'</title><style>'+printDocCSS()+'</style></head><body>'+
+      '<div class="pr-bar"><button onclick="window.print()">🖨️ 打印 / 存为 PDF</button><span>未自动弹出打印界面时，点左侧按钮；iPhone 在打印预览中放大图片后可选「存储到文件」导出 PDF</span></div>'+
+      '<div id="printArea">'+inner+'</div>'+
+      '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},500)});<\/scr'+'ipt></body></html>';
+    var w=window.open('','_blank');
+    if(!w)return false;
+    w.document.open();w.document.write(doc);w.document.close();
+    return true;
+  }catch(e){return false;}
+}
 function printModule(key){
   var names={study:'学习打卡',saving:'存钱计划',todo:'每日计划',reading:'读书记录',movie:'观影记录',sport:'运动锻炼',mood:'心情记录',treehole:'树洞',news:'时政',travel:'旅游日记'};
   try{
@@ -2957,6 +2987,7 @@ function printModule(key){
       '<div class="pr-sub">生成时间：'+new Date().toLocaleString()+(settings&&settings.cloud&&settings.cloud.userId?(' · 同步ID：'+settings.cloud.userId):'')+'</div>'+
       (moduleReportHTML(key)||'<div class="pr-sec"><h2>该板块</h2><div style="font-size:12px;color:#888;">（暂无记录）</div></div>');
     var pa=document.getElementById('printArea');if(pa)pa.innerHTML=html;
+    if(openPrintDoc('一禾叶 · '+(names[key]||'数据'),html))return;
     window.print();
   }catch(e){alert('生成打印内容失败：'+e.message);}
 }
@@ -2968,6 +2999,7 @@ function printReport(){
     _all.forEach(function(k){html+=moduleReportHTML(k);});
     var pa=document.getElementById('printArea');
     if(pa)pa.innerHTML=html;
+    if(openPrintDoc('一禾叶 · 工作台 数据报告',html))return;
     window.print();
   }catch(e){alert('生成打印内容失败：'+e.message);}
 }
